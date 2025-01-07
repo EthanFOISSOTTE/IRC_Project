@@ -1,8 +1,8 @@
 import * as React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import { Box, Button, TextField, Typography, Container, CssBaseline } from "@mui/material";
+import {useState} from "react";
 
 const style = {
     position: 'absolute',
@@ -21,28 +21,89 @@ export default function AccountModal() {
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
 
-    return (
-        <div>
-            <AddCircleIcon
-                onClick={handleOpen}
-                style={{ cursor: 'pointer' }}
-            />
+        const [formData, setFormData] = useState({
+            email: "",
+            password: "",
+        });
 
-            <Modal
-                open={open}
-                onClose={handleClose}
-                aria-labelledby="modal-modal-title"
-                aria-describedby="modal-modal-description"
-            >
-                <Box sx={style}>
-                    <Typography id="modal-modal-title" variant="h6" component="h2">
-                        Text in a modal
-                    </Typography>
-                    <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                        Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-                    </Typography>
-                </Box>
-            </Modal>
-        </div>
-    );
-}
+        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            const {name, value} = e.target;
+            setFormData({...formData, [name]: value});
+        };
+
+        const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+            e.preventDefault();
+            console.log("Form submitted:", formData);
+            // Ajouter ici la logique pour gérer la connexion (API, validations, etc.)
+        };
+
+        return (
+            <div>
+                <AddCircleIcon
+                    onClick={handleOpen}
+                    style={{cursor: 'pointer'}}
+                />
+
+                <Modal
+                    open={open}
+                    onClose={handleClose}
+                    aria-labelledby="modal-modal-title"
+                    aria-describedby="modal-modal-description"
+                >
+                    <Box sx={style}>
+
+                        <Container component="main" maxWidth="xs">
+                            <CssBaseline/>
+                            <Box
+                                sx={{
+                                    marginTop: 8,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                }}
+                            >
+                                <Typography component="h1" variant="h5">
+                                    Connexion
+                                </Typography>
+                                <Box component="form" onSubmit={handleSubmit} noValidate sx={{mt: 1}}>
+                                    <TextField
+                                        margin="normal"
+                                        required
+                                        fullWidth
+                                        id="email"
+                                        label="Adresse email"
+                                        name="email"
+                                        autoComplete="email"
+                                        autoFocus
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                    />
+                                    <TextField
+                                        margin="normal"
+                                        required
+                                        fullWidth
+                                        name="password"
+                                        label="Mot de passe"
+                                        type="password"
+                                        id="password"
+                                        autoComplete="current-password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                    />
+                                    <Button
+                                        type="submit"
+                                        fullWidth
+                                        variant="contained"
+                                        sx={{mt: 3, mb: 2}}
+                                    >
+                                        Se connecter
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </Container>
+
+                    </Box>
+                </Modal>
+            </div>
+        );
+    }
