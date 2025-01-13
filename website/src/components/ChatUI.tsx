@@ -106,6 +106,14 @@ const ChatUI = () => {
             addMessage(msg, false);
         });
 
+        newSocket.on("previousMessages", (msgs: { text: string; timestamp: string }[]) => {
+            const formattedMessages = msgs.map((msg) => ({
+                ...msg,
+                sent: false, // Les anciens messages ne sont pas envoyés par l'utilisateur local
+            }));
+            setMessages((prev) => [...formattedMessages, ...prev]); // Ajouter les messages à l'état existant
+        });
+
         newSocket.on("user-connected", (msg: string) => {
             addMessage(`🟢 ${msg}`, false);
         });
