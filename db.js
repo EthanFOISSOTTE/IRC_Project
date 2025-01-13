@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 function Connection() {
-    const mongoURI = "mongodb+srv://webserv:webserv@irs-serveur.r5zte.mongodb.net/IRC-Data/message"
+    const mongoURI = "mongodb+srv://webserv:webserv@irs-serveur.r5zte.mongodb.net/IRC-Data/"
     mongoose.connect(mongoURI)
         .then(() => console.log("db connected"))
         .catch(err => console.log(err))

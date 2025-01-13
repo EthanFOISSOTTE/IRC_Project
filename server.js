@@ -3,15 +3,16 @@ const express = require('express');
 const { createServer } = require('node:http');
 const { join } = require('node:path');
 const { Server } = require('socket.io');
-Connection()
+Connection() // Lance la connexion à la base de donnée MongoDB en ligne
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
-const Chat = require('./models/Chat.js');
+const Chat = require('./models/Chat.js'); // Appel le fichier qui constitue le modèle de sauvegarde dans la BDD
 const { timeStamp } = require('console');
 
+
 app.get('/', (req, res) => {
-    res.sendFile(join(__dirname, 'index.html'));
+    res.sendFile(join(__dirname, 'index.html')); // Appel le fichier html à envoyer/afficher au client
 });
 
 io.on('connection', (socket) => {
