@@ -60,7 +60,7 @@ io.on('connection', async (socket) => {
     socket.on('message', async (msg) => {
         if (username) {
             // Assurez-vous que le message contient seulement une fois le nom de l'utilisateur
-            const fullMessage = `${username} : ${msg}`;
+            const fullMessage = `${msg}`;
             console.log('Message reçu:', fullMessage);
 
             // Enregistrer le message dans MongoDB
