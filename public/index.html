@@ -9,6 +9,7 @@
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
         #messages { list-style-type: none; padding: 0; }
         #messages li { padding: 5px; border-bottom: 1px solid #ddd; }
+        #messages li.info { color: orange; }
         #username-container { margin: 10px; }
     </style>
 </head>
@@ -20,7 +21,7 @@
 </div>
 <ul id="messages"></ul>
 <form id="form" action="" style="display: none;">
-    <input id="input" autocomplete="off" placeholder="Entrez votre message" />
+    <input id="input" autocomplete="off" placeholder="Entrez votre message ou /nick nouveau_nom" />
     <button>Envoyer</button>
 </form>
 <script>
@@ -44,9 +45,7 @@
         }
     });
 
-
-
-    // Écouter le message de bienvenue
+    // Écouter les messages de bienvenue
     socket.on('welcome', (msg) => {
         const li = document.createElement('li');
         li.textContent = msg;
@@ -76,15 +75,37 @@
         document.getElementById('messages').appendChild(li);
     });
 
-    // Envoyer un message
+    // Écouter les messages de changement de pseudo
+    socket.on('nickname-changed', (msg) => {
+        const li = document.createElement('li');
+        li.textContent = msg;
+        li.classList.add('info'); // Ajouter la classe pour un style gris
+        document.getElementById('messages').appendChild(li);
+    });
+
+    // Gérer les envois de messages ou commandes
     const form = document.getElementById('form');
     const input = document.getElementById('input');
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         if (input.value && username) {
-            const fullMessage = `${username} : ${input.value}`;
-            socket.emit('message', fullMessage);
+            const message = input.value.trim();
+
+            // Vérifier si le message est une commande
+            if (message.startsWith('/nick ')) {
+                const newUsername = message.split(' ')[1];
+                if (newUsername) {
+                    socket.emit('change-nickname', newUsername);
+                    username = newUsername; // Met à jour le pseudo côté client
+                } else {
+                    alert('Veuillez entrer un pseudonyme valide après /nick.');
+                }
+            } else {
+                // Envoyer un message classique
+                const fullMessage = `${username} : ${message}`;
+                socket.emit('message', fullMessage);
+            }
             input.value = '';
         }
     });
