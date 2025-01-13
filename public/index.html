@@ -32,13 +32,19 @@
         const usernameInput = document.getElementById('username').value.trim();
         if (usernameInput) {
             username = usernameInput;
+
+            // Masquer la zone de saisie du nom et afficher le formulaire de chat
             document.getElementById('username-container').style.display = 'none';
             document.getElementById('form').style.display = 'block';
-            socket.emit('user-connected', username);
+
+            // Envoyer une seule fois l'événement set-username au serveur
+            socket.emit('set-username', username);
         } else {
             alert('Veuillez entrer un nom d\'utilisateur.');
         }
     });
+
+
 
     // Écouter le message de bienvenue
     socket.on('welcome', (msg) => {
@@ -57,7 +63,7 @@
     // Écouter les messages de connexion des utilisateurs
     socket.on('user-connected', (msg) => {
         const li = document.createElement('li');
-        li.textContent = `${msg} a rejoint le chat.`;
+        li.textContent = `${msg}`;
         li.style.color = 'green';
         document.getElementById('messages').appendChild(li);
     });
@@ -65,7 +71,7 @@
     // Écouter les messages de déconnexion des utilisateurs
     socket.on('user-disconnected', (msg) => {
         const li = document.createElement('li');
-        li.textContent = `${msg} a quitté le chat.`;
+        li.textContent = `${msg}`;
         li.style.color = 'red';
         document.getElementById('messages').appendChild(li);
     });

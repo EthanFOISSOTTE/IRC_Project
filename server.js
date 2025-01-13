@@ -22,7 +22,7 @@ mongoose.connect(process.env.MONGO_URI, {
 const messageSchema = new mongoose.Schema({
     content: String,
     timestamp: { type: Date, default: Date.now }
-},{ collection: 'messages' });
+}, { collection: 'messages' });
 const Message = mongoose.model('Message', messageSchema);
 
 // Middleware pour servir les fichiers statiques
@@ -35,8 +35,9 @@ app.get('/', (req, res) => {
 
 // Gérer les connexions Socket.IO
 io.on('connection', async (socket) => {
-    console.log('Un utilisateur est connecté');
-    io.emit('user-connected', 'Un utilisateur est connecté');
+    console.log('Un utilisateur est connecté (en attente de nom)');
+
+    let username = null;
 
     // Récupérer les messages depuis MongoDB et les envoyer au client
     try {
@@ -46,28 +47,46 @@ io.on('connection', async (socket) => {
         console.error('Erreur lors de la récupération des messages:', err);
     }
 
-    // Écouter un événement personnalisé
-    socket.on('message', async (msg) => {
-        console.log('Message reçu:', msg);
-
-        // Enregistrer le message dans MongoDB
-        try {
-            const message = new Message({ content: msg });
-            await message.save();
-        } catch (err) {
-            console.error('Erreur lors de l\'enregistrement du message:', err);
+    // Écouter l'événement set-username
+    socket.on('set-username', (name) => {
+        if (name && name.trim() !== '') {
+            username = name.trim();
+            console.log(`Un utilisateur s'est connecté : ${username}`);
+            io.emit('user-connected', `${username} vient de rejoindre le chat`);
         }
+    });
 
-        // Réémettre le message à tous les clients
-        io.emit('message', msg);
+    // Écouter les messages envoyés par les utilisateurs
+    socket.on('message', async (msg) => {
+        if (username) {
+            // Assurez-vous que le message contient seulement une fois le nom de l'utilisateur
+            const fullMessage = `${username} : ${msg}`;
+            console.log('Message reçu:', fullMessage);
+
+            // Enregistrer le message dans MongoDB
+            try {
+                const message = new Message({ content: fullMessage });
+                await message.save();
+            } catch (err) {
+                console.error('Erreur lors de l\'enregistrement du message:', err);
+            }
+
+            // Réémettre le message à tous les clients
+            io.emit('message', fullMessage);
+        }
     });
 
     // Gérer la déconnexion
     socket.on('disconnect', () => {
-        console.log('Un utilisateur s\'est déconnecté');
-        io.emit('user-disconnected', 'Un utilisateur s\'est déconnecté');
+        if (username) {
+            console.log(`Un utilisateur s'est déconnecté : ${username}`);
+            io.emit('user-disconnected', `${username} a quitté le chat`);
+        } else {
+            console.log('Un utilisateur sans nom s\'est déconnecté');
+        }
     });
 });
+
 
 // Lancer le serveur
 const PORT = process.env.PORT || 3000;
