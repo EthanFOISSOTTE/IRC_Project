@@ -9,16 +9,36 @@
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
         #messages { list-style-type: none; padding: 0; }
         #messages li { padding: 5px; border-bottom: 1px solid #ddd; }
+        #username-container { margin: 10px; }
     </style>
 </head>
 <body>
+<div id="username-container">
+    <label for="username">Nom d'utilisateur :</label>
+    <input id="username" type="text" autocomplete="off" placeholder="Entrez votre nom" />
+    <button id="set-username">Confirmer</button>
+</div>
 <ul id="messages"></ul>
-<form id="form" action="">
-    <input id="input" autocomplete="off" />
-    <button>Send</button>
+<form id="form" action="" style="display: none;">
+    <input id="input" autocomplete="off" placeholder="Entrez votre message" />
+    <button>Envoyer</button>
 </form>
 <script>
     const socket = io();
+    let username = '';
+
+    // Gérer le bouton de confirmation du nom d'utilisateur
+    document.getElementById('set-username').addEventListener('click', () => {
+        const usernameInput = document.getElementById('username').value.trim();
+        if (usernameInput) {
+            username = usernameInput;
+            document.getElementById('username-container').style.display = 'none';
+            document.getElementById('form').style.display = 'block';
+            socket.emit('user-connected', username);
+        } else {
+            alert('Veuillez entrer un nom d\'utilisateur.');
+        }
+    });
 
     // Écouter le message de bienvenue
     socket.on('welcome', (msg) => {
@@ -37,7 +57,7 @@
     // Écouter les messages de connexion des utilisateurs
     socket.on('user-connected', (msg) => {
         const li = document.createElement('li');
-        li.textContent = msg;
+        li.textContent = `${msg} a rejoint le chat.`;
         li.style.color = 'green';
         document.getElementById('messages').appendChild(li);
     });
@@ -45,7 +65,7 @@
     // Écouter les messages de déconnexion des utilisateurs
     socket.on('user-disconnected', (msg) => {
         const li = document.createElement('li');
-        li.textContent = msg;
+        li.textContent = `${msg} a quitté le chat.`;
         li.style.color = 'red';
         document.getElementById('messages').appendChild(li);
     });
@@ -56,8 +76,9 @@
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-        if (input.value) {
-            socket.emit('message', input.value);
+        if (input.value && username) {
+            const fullMessage = `${username} : ${input.value}`;
+            socket.emit('message', fullMessage);
             input.value = '';
         }
     });
