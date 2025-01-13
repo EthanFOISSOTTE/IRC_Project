@@ -3,7 +3,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
-
+const changeNickname = require('./commands/nick'); // Importer la fonction de la commande /nick
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -62,17 +62,14 @@ io.on('connection', async (socket) => {
 
     // Gérer le changement de pseudo avec /nick
     socket.on('change-nickname', (newUsername) => {
-        if (username && newUsername && newUsername.trim() !== '') {
-            const oldUsername = username;
-            username = newUsername.trim();
-            connectedUsers[socket.id] = username;
-
-            console.log(`${oldUsername} a changé son pseudo en ${username}`);
-
-            // Envoyer un message d'information
-            io.emit('nickname-changed', `${oldUsername} a changé son pseudo en ${username}`);
+        if (username) {
+            // Appeler la fonction de commande nick et mettre à jour le nom d'utilisateur
+            username = changeNickname(socket, newUsername, username, connectedUsers, io);
+        } else {
+            socket.emit('message', "Erreur : Vous devez d'abord définir un nom d'utilisateur avec.");
         }
     });
+
 
     // Écouter les messages envoyés par les utilisateurs
     socket.on('message', async (msg) => {
