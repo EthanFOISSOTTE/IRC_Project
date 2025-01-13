@@ -17,17 +17,21 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import ChatIcon from '@mui/icons-material/Chat';
 import { IoSend, IoSettingsSharp, IoMenu, IoMoon, IoSunny } from "react-icons/io5";
-import {useEffect, useState} from "react";
 import StyledChatContainer from "./StyledChatContainer.tsx";
 import SidePanel from "./SidePanel.tsx";
 import ChatArea from "./ChatArea.tsx";
 import MessageContainer from "./MessageContainer.tsx";
 import MessageBubble from "./MessageBubble.tsx";
 import AccountModal from "./AccountModal.tsx";
+import { useEffect, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 const ChatUI = () => {
-    const [messages, setMessages] = useState<{ id: number; text: string; sent: boolean; timestamp: string; }[]>([]);
-    const [newMessage, setNewMessage] = useState("");
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [messages, setMessages] = useState<
+        { text: string; sent: boolean; timestamp: string }[]
+    >([]);
+    const [inputValue, setInputValue] = useState("");
     const [mobileOpen, setMobileOpen] = useState(false);
     const [mode, setMode] = useState<"light" | "dark">("light");
 
@@ -37,6 +41,8 @@ const ChatUI = () => {
     const toggleTheme = () => {
         setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
     };
+
+    const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
     const customTheme = createTheme({
         palette: {
@@ -88,39 +94,42 @@ const ChatUI = () => {
         },
     ];
 
-    const dummyMessages = [
-        { id: 1, text: "Hi there!", sent: false, timestamp: "09:00 AM" },
-        { id: 2, text: "Hello! How are you?", sent: true, timestamp: "09:01 AM" },
-        {
-            id: 3,
-            text: "I'm doing great, thanks for asking!",
-            sent: false,
-            timestamp: "09:02 AM",
-        },
-    ];
-
     useEffect(() => {
-        setMessages(dummyMessages);
+        const newSocket = io(); // Initialise socket
+        setSocket(newSocket);
+
+        newSocket.on("welcome", (msg: string) => {
+            addMessage(msg, false);
+        });
+
+        newSocket.on("message", (msg: string) => {
+            addMessage(msg, false);
+        });
+
+        newSocket.on("user-connected", (msg: string) => {
+            addMessage(`🟢 ${msg}`, false);
+        });
+
+        newSocket.on("user-disconnected", (msg: string) => {
+            addMessage(`🔴 ${msg}`, false);
+        });
+
+        return () => {
+            newSocket.disconnect(); // Clean up
+        };
     }, []);
 
-    const handleSendMessage = () => {
-        if (newMessage.trim()) {
-            const newMsg = {
-                id: messages.length + 1,
-                text: newMessage,
-                sent: true,
-                timestamp: new Date().toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                }),
-            };
-            setMessages([...messages, newMsg]);
-            setNewMessage("");
-        }
+    const addMessage = (text: string, sent: boolean) => {
+        const timestamp = new Date().toLocaleTimeString();
+        setMessages((prev) => [...prev, { text, sent, timestamp }]);
     };
 
-    const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
+    const handleSendMessage = () => {
+        if (inputValue && socket) {
+            socket.emit("message", inputValue);
+            addMessage(inputValue, true);
+            setInputValue("");
+        }
     };
 
     const chatsList = (
@@ -200,6 +209,7 @@ const ChatUI = () => {
         <ThemeProvider theme={customTheme}>
             <CssBaseline />
             <Container sx={{ height: "100vh", width: "100vw", p: { xs: 0, md: 2 } }}>
+                {/* Header */}
                 <AppBar position="static" color="inherit" elevation={1}>
                     <Toolbar>
                         {isMobile && (
@@ -216,12 +226,14 @@ const ChatUI = () => {
                             IRC Project
                         </Typography>
                         <IconButton onClick={toggleTheme} color="inherit">
-                            {mode === "dark" ? <IoSunny /> : <IoMoon />}
+                            {theme.palette.mode === "dark" ? <IoSunny /> : <IoMoon />}
                         </IconButton>
                     </Toolbar>
                 </AppBar>
 
+                {/* Chat Layout */}
                 <StyledChatContainer>
+                    {/* Side Panels */}
                     {isMobile ? (
                         <Drawer
                             variant="temporary"
@@ -231,26 +243,27 @@ const ChatUI = () => {
                             ModalProps={{ keepMounted: true }}
                             sx={{ "& .MuiDrawer-paper": { width: "80%" } }}
                         >
-                            <Box sx={{ p: 2 }}>{chatsList}</Box>
+                            <Box sx={{ p: 2 }}>
+                                <SidePanel>{chatsList}</SidePanel>
+                            </Box>
                         </Drawer>
                     ) : (
                         <SidePanel elevation={2}>{chatsList}</SidePanel>
                     )}
 
+                    {/* Chat Area */}
                     <ChatArea elevation={2}>
-
-                        {/* Entete de la conversation */}
+                        {/* Chat Header */}
                         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-
                             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                <Typography variant="h6">Chat 1</Typography>
+                                <Typography variant="h6">Chat Room</Typography>
                             </Box>
-
                             <IconButton aria-label="settings">
                                 <IoSettingsSharp />
                             </IconButton>
                         </Box>
 
+                        {/* Messages */}
                         <Box
                             sx={{
                                 flex: 1,
@@ -262,8 +275,8 @@ const ChatUI = () => {
                                 p: 1,
                             }}
                         >
-                            {messages.map((message) => (
-                                <MessageContainer key={message.id} sent={message.sent}>
+                            {messages.map((message, index) => (
+                                <MessageContainer key={index} sent={message.sent}>
                                     <MessageBubble sent={message.sent}>
                                         <Typography variant="body1">{message.text}</Typography>
                                         <Typography
@@ -277,24 +290,27 @@ const ChatUI = () => {
                             ))}
                         </Box>
 
-                        <Box sx={{ display: "flex", gap: 1 }}>
+                        {/* New Message Input */}
+                        <Box id="form" sx={{ display: "flex", gap: 1 }}>
                             <TextField
+                                id="input"
                                 fullWidth
                                 placeholder="Type a message"
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
                             />
                             <IconButton
+                                id="sendButton"
                                 color="primary"
-                                onClick={handleSendMessage}
                                 aria-label="send message"
+                                onClick={handleSendMessage}
                             >
                                 <IoSend />
                             </IconButton>
                         </Box>
                     </ChatArea>
 
+                    {/* Online Users */}
                     {isMobile ? (
                         <Drawer
                             variant="temporary"
@@ -304,13 +320,17 @@ const ChatUI = () => {
                             ModalProps={{ keepMounted: true }}
                             sx={{ "& .MuiDrawer-paper": { width: "80%" } }}
                         >
-                            <Box sx={{ p: 2 }}>{onlineList}</Box>
+                            <Box sx={{ p: 2 }}>
+                                <SidePanel>{onlineList}</SidePanel>
+                            </Box>
                         </Drawer>
                     ) : (
                         <SidePanel elevation={2}>{onlineList}</SidePanel>
                     )}
-
                 </StyledChatContainer>
+
+                {/* Account Modal */}
+                <AccountModal />
             </Container>
         </ThemeProvider>
     );

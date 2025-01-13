@@ -53,8 +53,9 @@
     // Envoyer un message
     const form = document.getElementById('form');
     const input = document.getElementById('input');
+    const sendButton = document.getElementById('sendButton');
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('click', (e) => {
         e.preventDefault();
         if (input.value) {
             socket.emit('message', input.value);
