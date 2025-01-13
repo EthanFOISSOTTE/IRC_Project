@@ -34,6 +34,22 @@
         document.getElementById('messages').appendChild(li);
     });
 
+    // Écouter les messages de connexion des utilisateurs
+    socket.on('user-connected', (msg) => {
+        const li = document.createElement('li');
+        li.textContent = msg;
+        li.style.color = 'green';
+        document.getElementById('messages').appendChild(li);
+    });
+
+    // Écouter les messages de déconnexion des utilisateurs
+    socket.on('user-disconnected', (msg) => {
+        const li = document.createElement('li');
+        li.textContent = msg;
+        li.style.color = 'red';
+        document.getElementById('messages').appendChild(li);
+    });
+
     // Envoyer un message
     const form = document.getElementById('form');
     const input = document.getElementById('input');

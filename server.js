@@ -22,7 +22,7 @@ mongoose.connect(process.env.MONGO_URI, {
 const messageSchema = new mongoose.Schema({
     content: String,
     timestamp: { type: Date, default: Date.now }
-});
+},{ collection: 'messages' });
 const Message = mongoose.model('Message', messageSchema);
 
 // Middleware pour servir les fichiers statiques
@@ -34,25 +34,29 @@ app.get('/', (req, res) => {
 });
 
 // Gérer les connexions Socket.IO
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
     console.log('Un utilisateur est connecté');
+    io.emit('user-connected', 'Un utilisateur est connecté');
 
-    // Exemple d'émission d'un message au client
-    socket.emit('welcome', 'Bienvenue dans le chat Socket.IO !');
+    // Récupérer les messages depuis MongoDB et les envoyer au client
+    try {
+        const messages = await Message.find().sort({ timestamp: 1 });
+        socket.emit('previousMessages', messages);
+    } catch (err) {
+        console.error('Erreur lors de la récupération des messages:', err);
+    }
 
     // Écouter un événement personnalisé
     socket.on('message', async (msg) => {
         console.log('Message reçu:', msg);
 
         // Enregistrer le message dans MongoDB
-
         try {
             const message = new Message({ content: msg });
             await message.save();
         } catch (err) {
             console.error('Erreur lors de l\'enregistrement du message:', err);
         }
-
 
         // Réémettre le message à tous les clients
         io.emit('message', msg);
@@ -61,11 +65,12 @@ io.on('connection', (socket) => {
     // Gérer la déconnexion
     socket.on('disconnect', () => {
         console.log('Un utilisateur s\'est déconnecté');
+        io.emit('user-disconnected', 'Un utilisateur s\'est déconnecté');
     });
 });
 
 // Lancer le serveur
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Serveur lancé sur http://localhost:${PORT}`);
 });
