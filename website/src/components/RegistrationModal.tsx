@@ -2,6 +2,7 @@ import * as React from 'react';
 import Modal from '@mui/material/Modal';
 import { Box, Button, TextField, Typography, Container, CssBaseline, useTheme } from "@mui/material";
 import { useState } from "react";
+import axios from 'axios';
 
 const style = {
     position: 'absolute',
@@ -16,7 +17,7 @@ const style = {
 };
 
 export default function RegistrationModal() {
-    const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = useState(false);
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
 
@@ -34,14 +35,23 @@ export default function RegistrationModal() {
         setFormData({ ...formData, [name]: value });
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (formData.password !== formData.passwordConfirm) {
             setError("Les mots de passe doivent être identiques");
         } else {
             setError("");
-            console.log("Form submitted:", formData);
-            // Ajouter ici la logique pour gérer la connexion (API, validations, etc.)
+            try {
+                await axios.post('/register', {
+                    email: formData.email,
+                    pseudo: formData.pseudo,
+                    password: formData.password,
+                });
+                console.log("Utilisateur créé avec succès");
+                handleClose();
+            } catch (err) {
+                console.error("Erreur lors de la création de l'utilisateur", err);
+            }
         }
     };
 
@@ -63,7 +73,6 @@ export default function RegistrationModal() {
                 aria-describedby="modal-modal-description"
             >
                 <Box sx={style}>
-
                     <Container component="main" maxWidth="xs">
                         <CssBaseline />
                         <Box
@@ -142,7 +151,6 @@ export default function RegistrationModal() {
                             </Box>
                         </Box>
                     </Container>
-
                 </Box>
             </Modal>
         </div>

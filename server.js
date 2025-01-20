@@ -4,6 +4,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const path = require('path');
+const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
@@ -34,6 +36,30 @@ const messageSchema = new mongoose.Schema(
     { collection: 'messages' }
 );
 const Message = mongoose.model('Message', messageSchema);
+
+// Définir le modèle d'utilisateur
+const userSchema = new mongoose.Schema({
+    id: { type: String, default: uuidv4 },
+    email: { type: String, required: true, unique: true },
+    pseudo: { type: String, required: true },
+    password: { type: String, required: true },
+}, { collection: 'user' });
+const User = mongoose.model('User', userSchema);
+
+app.use(express.json());
+
+// Route pour l'inscription des utilisateurs
+app.post('/register', async (req, res) => {
+    const { email, pseudo, password } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ id: uuidv4(), email, pseudo, password: hashedPassword });
+        await newUser.save();
+        res.status(201).send('Utilisateur créé avec succès');
+    } catch (err) {
+        res.status(400).send('Erreur lors de la création de l\'utilisateur');
+    }
+});
 
 // Middleware pour servir les fichiers statiques du build React
 const buildPath = path.join(__dirname, 'website', 'dist'); // Assurez-vous que le chemin est correct
@@ -105,7 +131,8 @@ io.on('connection', async (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000; // Définir le port avec une valeur par défaut
+// Lancer le serveur
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Serveur lancé sur http://localhost:${PORT}`);
 });
