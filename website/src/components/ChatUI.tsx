@@ -108,8 +108,13 @@ const ChatUI = () => {
     ];
 
     useEffect(() => {
-        const newSocket = io('http://localhost:3000');
-        setSocket(newSocket);
+        // const newSocket = io('http://localhost:3000');
+        const newSocket = io('http://votre-serveur:3000', {
+            transports: ['websocket'],
+            withCredentials: true,
+        });
+         setSocket(newSocket);
+
 
         newSocket.on("welcome", (msg: string) => {
             addMessage(msg, false);

@@ -9,7 +9,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:3000',
+        origin: '*', // Autoriser toutes les origines
+        methods: ['GET', 'POST'], // Méthodes HTTP autorisées
+        allowedHeaders: ['Content-Type'], // En-têtes autorisés
+        credentials: true // Autoriser les cookies
     },
 });
 
