@@ -97,6 +97,30 @@ io.on('connection', async (socket) => {
             } else {
                 socket.emit('message', "Erreur : vous devez spécifier un nouveau pseudo après /nick.");
             }
+        } else if (msg.startsWith('/pm ')) {
+            // Commande /pm pour un message privé
+            const parts = msg.split(' ');
+            const targetUsername = parts[1]; // Nom de l'utilisateur cible
+            const privateMessage = parts.slice(2).join(' '); // Message privé
+
+            if (targetUsername && privateMessage) {
+                const targetSocketId = Object.keys(connectedUsers).find(id => connectedUsers[id] === targetUsername);
+
+                if (targetSocketId) {
+                    // L'utilisateur cible est connecté
+                    io.to(targetSocketId).emit('private-message', {
+                        from: username,
+                        message: privateMessage,
+                    });
+
+                    // Confirmer à l'expéditeur que le message a été envoyé
+                    socket.emit('message', `Message privé envoyé à ${targetUsername}: ${privateMessage}`);
+                } else {
+                    socket.emit('message', `Erreur : l'utilisateur ${targetUsername} n'est pas connecté.`);
+                }
+            } else {
+                socket.emit('message', "Erreur : vous devez spécifier un utilisateur et un message.");
+            }
         } else if (username) {
             // Messages normaux
             const fullMessage = `${username} : ${msg}`;

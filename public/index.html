@@ -10,6 +10,7 @@
         #messages { list-style-type: none; padding: 0; }
         #messages li { padding: 5px; border-bottom: 1px solid #ddd; }
         #username-container { margin: 10px; }
+        .private-message { background-color: #f0f0f0; color: #555; font-style: italic; }
     </style>
 </head>
 <body>
@@ -54,6 +55,14 @@
             li.textContent = message.content;
             messagesList.appendChild(li);
         });
+    });
+
+    // Afficher les messages privés
+    socket.on('private-message', (data) => {
+        const li = document.createElement('li');
+        li.textContent = `Message privé de ${data.from}: ${data.message}`;
+        li.classList.add('private-message'); // Ajouter une classe pour les messages privés
+        document.getElementById('messages').appendChild(li);
     });
 
     // Écouter les messages de connexion des utilisateurs
