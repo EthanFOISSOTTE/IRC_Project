@@ -76,7 +76,7 @@
     socket.on('nickname-changed', (msg) => {
         const li = document.createElement('li');
         li.textContent = msg;
-        li.classList.add('info'); // Ajouter la classe pour un style gris
+        li.style.color = 'orange';
         document.getElementById('messages').appendChild(li);
     });
 
