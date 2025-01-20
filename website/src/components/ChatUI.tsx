@@ -127,10 +127,11 @@ const ChatUI = () => {
         newSocket.on("previousMessages", (msgs: { text: string; sent: boolean; timestamp: string }[]) => {
             const formattedMessages = msgs.map((msg) => ({
                 ...msg,
-                sent: false,
+                sent: false, // On s'assure que les anciens messages sont marqués comme "non envoyés"
             }));
             setMessages((prev) => [...prev, ...formattedMessages]);
         });
+
 
         newSocket.on("user-connected", (msg: string) => {
             addMessage(`🟢 ${msg}`, false);

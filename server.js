@@ -58,10 +58,20 @@ io.on('connection', async (socket) => {
     // Récupérer les messages depuis MongoDB et les envoyer au client
     try {
         const messages = await Message.find().sort({ timestamp: 1 });
-        socket.emit('previousMessages', messages);
+
+        // Formater les messages dans le format attendu
+        const formattedMessages = messages.map((msg) => ({
+            text: msg.content,           // Le contenu du message
+            sent: false,                 // Champ sent (défini comme false pour les anciens messages)
+            timestamp: msg.timestamp.toISOString(), // Convertir la date en chaîne ISO
+        }));
+
+        // Envoyer les messages formatés au client
+        socket.emit('previousMessages', formattedMessages);
     } catch (err) {
         console.error('Erreur lors de la récupération des messages :', err);
     }
+
 
     // Écouter l'événement set-username
     socket.on('set-username', (name) => {
@@ -77,21 +87,27 @@ io.on('connection', async (socket) => {
     // Écouter les messages envoyés par les utilisateurs
     socket.on('message', async (msg) => {
         if (username) {
+            const fullMessage = `${username}: ${msg}`;
             console.log(`Message reçu de ${username}: ${msg}`);
 
             // Enregistrer le message dans MongoDB
             try {
-                const message = new Message({ content: msg });
+                const message = new Message({ content: fullMessage });
                 await message.save();
                 console.log('Message enregistré dans la base de données');
             } catch (err) {
                 console.error('Erreur lors de l\'enregistrement du message :', err);
             }
 
-            // Réémettre le message à tous les clients
-            io.emit('message', { text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
+            // Réémettre le message dans le bon format
+            io.emit('message', {
+                text: fullMessage,                // Contenu du message
+                sent: true,                       // Champ sent (vrai pour les nouveaux messages)
+                timestamp: new Date().toISOString(), // Date actuelle en ISO
+            });
         }
     });
+
 
     // Gérer la déconnexion
     socket.on('disconnect', () => {
