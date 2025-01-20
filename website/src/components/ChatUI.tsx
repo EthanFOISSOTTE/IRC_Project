@@ -115,6 +115,7 @@ const ChatUI = () => {
 
         setSocket(newSocket);
 
+
         newSocket.on("welcome", (msg: string) => {
             addMessage(msg, false);
         });
