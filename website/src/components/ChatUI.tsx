@@ -25,6 +25,7 @@ import MessageBubble from "./MessageBubble";
 import AccountModal from "./AccountModal";
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import RegistrationModal from "./RegistrationModal.tsx";
 
 const ChatUI = () => {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -158,7 +159,7 @@ const ChatUI = () => {
         <>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="body2" color="text.secondary">
-                    Chats
+                    Channels
                 </Typography>
                 <AccountModal />
             </div>
@@ -244,12 +245,17 @@ const ChatUI = () => {
                                 <IoMenu />
                             </IconButton>
                         )}
+
                         <Typography variant="h6" sx={{ flexGrow: 1 }}>
                             IRC Project
                         </Typography>
+
+                        <RegistrationModal />
+
                         <IconButton onClick={toggleTheme} color="inherit">
                             {theme.palette.mode === "dark" ? <IoSunny /> : <IoMoon />}
                         </IconButton>
+
                     </Toolbar>
                 </AppBar>
 
