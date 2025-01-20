@@ -93,9 +93,6 @@ io.on('connection', async (socket) => {
                 if (oldUsername !== username) {
                     // Mettre à jour les anciens messages dans MongoDB
                     await updateMessagesWithNewUsername(oldUsername, username);
-
-                    // Envoyer un message annonçant le changement de pseudo
-                    io.emit('nickname-changed', `${oldUsername} a changé son pseudo en ${username}`);
                 }
             } else {
                 socket.emit('message', "Erreur : vous devez spécifier un nouveau pseudo après /nick.");
