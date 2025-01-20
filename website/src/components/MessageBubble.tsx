@@ -1,5 +1,5 @@
-import {styled} from "@mui/system";
-import {Card} from "@mui/material";
+import { styled } from "@mui/system";
+import { Card } from "@mui/material";
 
 const MessageBubble = styled(Card)<{ sent: boolean }>(({ theme, sent }) => ({
     maxWidth: "70%",

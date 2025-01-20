@@ -17,12 +17,12 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import ChatIcon from '@mui/icons-material/Chat';
 import { IoSend, IoSettingsSharp, IoMenu, IoMoon, IoSunny } from "react-icons/io5";
-import StyledChatContainer from "./StyledChatContainer.tsx";
-import SidePanel from "./SidePanel.tsx";
-import ChatArea from "./ChatArea.tsx";
-import MessageContainer from "./MessageContainer.tsx";
-import MessageBubble from "./MessageBubble.tsx";
-import AccountModal from "./AccountModal.tsx";
+import StyledChatContainer from "./StyledChatContainer";
+import SidePanel from "./SidePanel";
+import ChatArea from "./ChatArea";
+import MessageContainer from "./MessageContainer";
+import MessageBubble from "./MessageBubble";
+import AccountModal from "./AccountModal";
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
@@ -35,6 +35,9 @@ const ChatUI = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [mode, setMode] = useState<"light" | "dark">("light");
 
+    const [username, setUsername] = useState<string>('');
+    const [isUsernameSet, setIsUsernameSet] = useState<boolean>(false);
+
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -43,6 +46,16 @@ const ChatUI = () => {
     };
 
     const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+
+    const handleSetUsername = () => {
+        const trimmedUsername = username.trim();
+        if (trimmedUsername && socket) {
+            socket.emit('set-username', trimmedUsername);
+            setIsUsernameSet(true);
+        } else {
+            alert('Veuillez entrer un nom d\'utilisateur.');
+        }
+    };
 
     const customTheme = createTheme({
         palette: {
@@ -95,23 +108,23 @@ const ChatUI = () => {
     ];
 
     useEffect(() => {
-        const newSocket = io(); // Initialise socket
+        const newSocket = io('http://localhost:3000');
         setSocket(newSocket);
 
         newSocket.on("welcome", (msg: string) => {
             addMessage(msg, false);
         });
 
-        newSocket.on("message", (msg: string) => {
-            addMessage(msg, false);
+        newSocket.on("message", (msg: { text: string; sent: boolean; timestamp: string }) => {
+            addMessage(msg.text, msg.sent, msg.timestamp);
         });
 
-        newSocket.on("previousMessages", (msgs: { text: string; timestamp: string }[]) => {
+        newSocket.on("previousMessages", (msgs: { text: string; sent: boolean; timestamp: string }[]) => {
             const formattedMessages = msgs.map((msg) => ({
                 ...msg,
-                sent: false, // Les anciens messages ne sont pas envoyés par l'utilisateur local
+                sent: false,
             }));
-            setMessages((prev) => [...formattedMessages, ...prev]); // Ajouter les messages à l'état existant
+            setMessages((prev) => [...prev, ...formattedMessages]);
         });
 
         newSocket.on("user-connected", (msg: string) => {
@@ -123,19 +136,17 @@ const ChatUI = () => {
         });
 
         return () => {
-            newSocket.disconnect(); // Clean up
+            newSocket.disconnect();
         };
     }, []);
 
-    const addMessage = (text: string, sent: boolean) => {
-        const timestamp = new Date().toLocaleTimeString();
+    const addMessage = (text: string, sent: boolean, timestamp: string = new Date().toLocaleTimeString()) => {
         setMessages((prev) => [...prev, { text, sent, timestamp }]);
     };
 
     const handleSendMessage = () => {
         if (inputValue && socket) {
             socket.emit("message", inputValue);
-            addMessage(inputValue, true);
             setInputValue("");
         }
     };
@@ -299,23 +310,45 @@ const ChatUI = () => {
                         </Box>
 
                         {/* New Message Input */}
-                        <Box id="form" sx={{ display: "flex", gap: 1 }}>
-                            <TextField
-                                id="input"
-                                fullWidth
-                                placeholder="Type a message"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                            />
-                            <IconButton
-                                id="sendButton"
-                                color="primary"
-                                aria-label="send message"
-                                onClick={handleSendMessage}
-                            >
-                                <IoSend />
-                            </IconButton>
-                        </Box>
+
+                        {!isUsernameSet ? (
+                            <Box id="username-container" sx={{display: "flex", gap: 1}}>
+                                <TextField
+                                    id="username"
+                                    fullWidth
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="Entrez votre nom d'utilisateur"
+                                    value={username}
+                                />
+                                <IconButton
+                                    id="set-username"
+                                    color="primary"
+                                    aria-label="define username"
+                                    onClick={handleSetUsername}
+                                >
+                                    <IoSend/>
+                                </IconButton>
+                            </Box>
+                        ) : (
+                            <Box id="form" sx={{display: "flex", gap: 1}}>
+                                <TextField
+                                    id="input"
+                                    fullWidth
+                                    placeholder="Type a message"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                />
+                                <IconButton
+                                    id="sendButton"
+                                    color="primary"
+                                    aria-label="send message"
+                                    onClick={handleSendMessage}
+                                >
+                                    <IoSend />
+                                </IconButton>
+                            </Box>
+                        )}
+
                     </ChatArea>
 
                     {/* Online Users */}
@@ -337,8 +370,6 @@ const ChatUI = () => {
                     )}
                 </StyledChatContainer>
 
-                {/* Account Modal */}
-                <AccountModal />
             </Container>
         </ThemeProvider>
     );
