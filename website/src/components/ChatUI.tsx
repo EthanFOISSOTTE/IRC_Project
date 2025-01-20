@@ -335,40 +335,48 @@ const ChatUI = () => {
                         {/* New Message Input */}
 
                         {!isUsernameSet ? (
-                            <Box id="username-container" sx={{display: "flex", gap: 1}}>
-                                <TextField
-                                    id="username"
-                                    fullWidth
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="Entrez votre nom d'utilisateur"
-                                    value={username}
-                                />
-                                <IconButton
-                                    id="set-username"
-                                    color="primary"
-                                    aria-label="define username"
-                                    onClick={handleSetUsername}
-                                >
-                                    <IoSend/>
-                                </IconButton>
+                            <Box id="username-container" sx={{ display: "flex", gap: 1 }}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleSetUsername(); }} style={{ display: "flex", width: "100%" }}>
+                                    <TextField
+                                        id="username"
+                                        fullWidth
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        placeholder="Entrez votre nom d'utilisateur"
+                                        autoComplete="off"
+                                        value={username}
+                                    />
+                                    <IconButton
+                                        id="set-username"
+                                        color="primary"
+                                        aria-label="define username"
+                                        onClick={handleSetUsername}
+                                        type="submit"
+                                    >
+                                        <IoSend />
+                                    </IconButton>
+                                </form>
                             </Box>
                         ) : (
-                            <Box id="form" sx={{display: "flex", gap: 1}}>
-                                <TextField
-                                    id="input"
-                                    fullWidth
-                                    placeholder="Type a message"
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                />
-                                <IconButton
-                                    id="sendButton"
-                                    color="primary"
-                                    aria-label="send message"
-                                    onClick={handleSendMessage}
-                                >
-                                    <IoSend />
-                                </IconButton>
+                            <Box id="form" sx={{ display: "flex", gap: 1 }}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} style={{ display: "flex", width: "100%" }}>
+                                    <TextField
+                                        id="input"
+                                        fullWidth
+                                        placeholder="Type a message"
+                                        value={inputValue}
+                                        autoComplete="off"
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                    />
+                                    <IconButton
+                                        id="sendButton"
+                                        color="primary"
+                                        aria-label="send message"
+                                        onClick={handleSendMessage}
+                                        type="submit"
+                                    >
+                                        <IoSend />
+                                    </IconButton>
+                                </form>
                             </Box>
                         )}
 
