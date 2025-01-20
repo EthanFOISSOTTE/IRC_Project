@@ -24,6 +24,7 @@ import MessageContainer from "./MessageContainer";
 import MessageBubble from "./MessageBubble";
 import AccountModal from "./AccountModal";
 import { useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import RegistrationModal from "./RegistrationModal.tsx";
 
@@ -55,6 +56,14 @@ const ChatUI = () => {
             setIsUsernameSet(true);
         } else {
             alert('Veuillez entrer un nom d\'utilisateur.');
+        }
+    };
+
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     };
 
@@ -107,6 +116,10 @@ const ChatUI = () => {
             name: "Mickael"
         },
     ];
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     useEffect(() => {
         const newSocket = io(`ws://${window.location.hostname}:3000`, {
@@ -316,6 +329,7 @@ const ChatUI = () => {
                                     </MessageBubble>
                                 </MessageContainer>
                             ))}
+                            <div ref={messagesEndRef} />
                         </Box>
 
                         {/* New Message Input */}
