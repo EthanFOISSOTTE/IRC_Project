@@ -120,8 +120,12 @@ const ChatUI = () => {
             addMessage(msg, false);
         });
 
-        newSocket.on("message", (msg: { text: string; sent: boolean; timestamp: string }) => {
-            addMessage(msg.text, msg.sent, msg.timestamp);
+        newSocket.on("message", (msg: string) => {
+            addMessage(msg, false); // Ajouter le message brut reçu dans le cadre
+        });
+
+        newSocket.on("private-message", (data: { from: string; message: string }) => {
+            addPrivateMessage(data.from, data.message);
         });
 
         newSocket.on("previousMessages", (msgs: { text: string; sent: boolean; timestamp: string }[]) => {
@@ -131,7 +135,6 @@ const ChatUI = () => {
             }));
             setMessages((prev) => [...prev, ...formattedMessages]);
         });
-
 
         newSocket.on("user-connected", (msg: string) => {
             addMessage(`🟢 ${msg}`, false);
@@ -148,6 +151,14 @@ const ChatUI = () => {
 
     const addMessage = (text: string, sent: boolean, timestamp: string = new Date().toLocaleTimeString()) => {
         setMessages((prev) => [...prev, { text, sent, timestamp }]);
+    };
+
+
+    const addPrivateMessage = (from: string, text: string, timestamp: string = new Date().toLocaleTimeString()) => {
+        setMessages((prev) => [
+            ...prev,
+            { text, sent: false, timestamp, isPrivate: true, from },
+        ]);
     };
 
     const handleSendMessage = () => {
