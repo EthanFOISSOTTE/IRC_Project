@@ -9,7 +9,6 @@
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
         #messages { list-style-type: none; padding: 0; }
         #messages li { padding: 5px; border-bottom: 1px solid #ddd; }
-        #messages li.info { color: orange; }
         #username-container { margin: 10px; }
     </style>
 </head>
@@ -21,51 +20,40 @@
 </div>
 <ul id="messages"></ul>
 <form id="form" action="" style="display: none;">
-    <input id="input" autocomplete="off" placeholder="Entrez votre message ou /nick nouveau_nom" />
+    <input id="input" autocomplete="off" placeholder="Entrez votre message" />
     <button>Envoyer</button>
 </form>
 <script>
     const socket = io();
     let username = '';
 
-    // Gérer le bouton de confirmation du nom d'utilisateur
     document.getElementById('set-username').addEventListener('click', () => {
         const usernameInput = document.getElementById('username').value.trim();
         if (usernameInput) {
             username = usernameInput;
-
-            // Masquer la zone de saisie du nom et afficher le formulaire de chat
             document.getElementById('username-container').style.display = 'none';
             document.getElementById('form').style.display = 'block';
-
-            // Envoyer une seule fois l'événement set-username au serveur
             socket.emit('set-username', username);
         } else {
             alert('Veuillez entrer un nom d\'utilisateur.');
         }
     });
 
-    // Écouter les anciens messages
-    socket.on('previousMessages', (messages) => {
-        messages.forEach((msg) => {
-            const li = document.createElement('li');
-            li.textContent = msg.content;
-            document.getElementById('messages').appendChild(li);
-        });
-    });
-
-    // Écouter les messages de bienvenue
-    socket.on('welcome', (msg) => {
-        const li = document.createElement('li');
-        li.textContent = msg;
-        document.getElementById('messages').appendChild(li);
-    });
-
-    // Écouter les messages des autres utilisateurs
     socket.on('message', (msg) => {
         const li = document.createElement('li');
         li.textContent = msg;
         document.getElementById('messages').appendChild(li);
+    });
+
+    socket.on('previousMessages', (messages) => {
+        const messagesList = document.getElementById('messages');
+        messagesList.innerHTML = ''; // Vider les messages actuels
+
+        messages.forEach((message) => {
+            const li = document.createElement('li');
+            li.textContent = message.content;
+            messagesList.appendChild(li);
+        });
     });
 
     // Écouter les messages de connexion des utilisateurs
@@ -92,29 +80,13 @@
         document.getElementById('messages').appendChild(li);
     });
 
-    // Gérer les envois de messages ou commandes
     const form = document.getElementById('form');
     const input = document.getElementById('input');
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-        if (input.value && username) {
-            const message = input.value.trim();
-
-            // Vérifier si le message est une commande
-            if (message.startsWith('/nick ')) {
-                const newUsername = message.split(' ')[1];
-                if (newUsername) {
-                    socket.emit('change-nickname', newUsername);
-                    username = newUsername; // Met à jour le pseudo côté client
-                } else {
-                    alert('Veuillez entrer un pseudonyme valide après /nick.');
-                }
-            } else {
-                // Envoyer un message classique
-                const fullMessage = `${username} : ${message}`;
-                socket.emit('message', fullMessage);
-            }
+        if (input.value) {
+            socket.emit('message', input.value);
             input.value = '';
         }
     });
