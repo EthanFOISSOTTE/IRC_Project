@@ -33,8 +33,7 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
-// Stockage temporaire des utilisateurs connectés
-const connectedUsers = {};
+let connectedUsers = {}; // Object pour garder une trace des utilisateurs connectés
 
 // Gérer les connexions Socket.IO
 io.on('connection', async (socket) => {
@@ -49,12 +48,11 @@ io.on('connection', async (socket) => {
         console.error('Erreur lors de la récupération des messages:', err);
     }
 
-    // Écouter l'événement set-username
+    // Gérer l'événement set-username
     socket.on('set-username', (name) => {
         if (name && name.trim() !== '') {
             username = name.trim();
-            connectedUsers[socket.id] = username;
-
+            connectedUsers[socket.id] = username; // Ajouter l'utilisateur à la liste
             console.log(`Un utilisateur s'est connecté : ${username}`);
             io.emit('user-connected', `${username} vient de rejoindre le chat`);
         }
@@ -69,6 +67,28 @@ io.on('connection', async (socket) => {
             socket.emit('message', "Erreur : Vous devez d'abord définir un nom d'utilisateur avec.");
         }
     });
+
+    // Écouter les messages des utilisateurs
+    socket.on('message', async (msg) => {
+        if (msg.startsWith('/users')) {
+            listUsers(socket, connectedUsers); // Commande /users
+        } else if (username) {
+            const fullMessage = `${username} : ${msg}`;
+            console.log('Message reçu:', fullMessage);
+
+            // Enregistrer le message dans MongoDB
+            try {
+                const message = new Message({ content: fullMessage });
+                await message.save();
+            } catch (err) {
+                console.error('Erreur lors de l\'enregistrement du message:', err);
+            }
+
+            // Réémettre le message à tous les clients
+            io.emit('message', fullMessage);
+        }
+    });
+
 
 
     // Écouter les messages envoyés par les utilisateurs
@@ -92,9 +112,9 @@ io.on('connection', async (socket) => {
     // Gérer la déconnexion
     socket.on('disconnect', () => {
         if (username) {
+            delete connectedUsers[socket.id]; // Supprimer l'utilisateur de la liste des connectés
             console.log(`Un utilisateur s'est déconnecté : ${username}`);
             io.emit('user-disconnected', `${username} a quitté le chat`);
-            delete connectedUsers[socket.id];
         } else {
             console.log('Un utilisateur sans nom s\'est déconnecté');
         }
