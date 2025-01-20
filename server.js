@@ -4,6 +4,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const path = require('path');
+const changeNickname = require('./commands/nick'); // Commande /nick
+const listUsers = require('./commands/users'); // Commande /users
 
 const app = express();
 const server = http.createServer(app);
@@ -47,6 +49,24 @@ app.get('*', (req, res) => {
 // Stockage temporaire des utilisateurs connectés
 const connectedUsers = {};
 
+// Fonction pour mettre à jour les messages avec un nouveau pseudo
+const updateMessagesWithNewUsername = async (oldUsername, newUsername) => {
+    try {
+        // Trouver tous les messages envoyés par l'utilisateur dont le pseudo a changé
+        const messagesToUpdate = await Message.find({ content: { $regex: `^${oldUsername} :` } });
+
+        // Mettre à jour uniquement les messages de l'utilisateur
+        for (const message of messagesToUpdate) {
+            message.content = message.content.replace(`${oldUsername} :`, `${newUsername} :`);
+            await message.save(); // Sauvegarder dans MongoDB
+        }
+
+        console.log(`Mise à jour de ${messagesToUpdate.length} messages avec le nouveau pseudo.`);
+    } catch (err) {
+        console.error('Erreur lors de la mise à jour des anciens messages:', err);
+    }
+};
+
 // Gérer les connexions Socket.IO
 io.on('connection', async (socket) => {
     console.log('Un utilisateur est connecté (en attente de nom)');
@@ -58,10 +78,20 @@ io.on('connection', async (socket) => {
     // Récupérer les messages depuis MongoDB et les envoyer au client
     try {
         const messages = await Message.find().sort({ timestamp: 1 });
-        socket.emit('previousMessages', messages);
+
+        // Formater les messages dans le format attendu
+        const formattedMessages = messages.map((msg) => ({
+            text: msg.content,           // Le contenu du message
+            sent: false,                 // Champ sent (défini comme false pour les anciens messages)
+            timestamp: msg.timestamp.toISOString(), // Convertir la date en chaîne ISO
+        }));
+
+        // Envoyer les messages formatés au client
+        socket.emit('previousMessages', formattedMessages);
     } catch (err) {
         console.error('Erreur lors de la récupération des messages :', err);
     }
+
 
     // Écouter l'événement set-username
     socket.on('set-username', (name) => {
@@ -74,31 +104,86 @@ io.on('connection', async (socket) => {
         }
     });
 
-    // Écouter les messages envoyés par les utilisateurs
+    // Gérer les messages des utilisateurs
     socket.on('message', async (msg) => {
-        if (username) {
-            console.log(`Message reçu de ${username}: ${msg}`);
+        if (msg.startsWith('/users')) {
+            // Commande /users
+            listUsers(socket, connectedUsers);
+        } else if (msg.startsWith('/nick ')) {
+            // Commande /nick
+            const newUsername = msg.split(' ')[1]; // Extraire le nouveau pseudo
+            if (newUsername) {
+                const oldUsername = username;
+                username = changeNickname(socket, newUsername, username, connectedUsers, io);
+
+                if (oldUsername !== username) {
+                    // Mettre à jour les anciens messages dans MongoDB
+                    await updateMessagesWithNewUsername(oldUsername, username);
+                }
+
+                io.emit('message', {
+                    text: `L'utilisateur ${oldUsername} vient de changer son pseudo pour : ${newUsername}.`,
+                    sent: true,
+                    timestamp: new Date().toISOString(),
+                });
+
+            } else {
+                socket.emit('message', "Erreur : vous devez spécifier un nouveau pseudo après /nick.");
+            }
+        } else if (msg.startsWith('/pm ')) {
+            // Commande /pm pour un message privé
+            const parts = msg.split(' ');
+            const targetUsername = parts[1]; // Nom de l'utilisateur cible
+            const privateMessage = parts.slice(2).join(' '); // Message privé
+
+            if (targetUsername && privateMessage) {
+                const targetSocketId = Object.keys(connectedUsers).find(id => connectedUsers[id] === targetUsername);
+
+                if (targetSocketId) {
+                    // L'utilisateur cible est connecté
+                    io.to(targetSocketId).emit('private-message', {
+                        from: username,
+                        message: privateMessage,
+                    });
+
+                    // Confirmer à l'expéditeur que le message a été envoyé
+                    socket.emit('message', `Message privé envoyé à ${targetUsername}: ${privateMessage}`);
+                } else {
+                    socket.emit('message', `Erreur : l'utilisateur ${targetUsername} n'est pas connecté.`);
+                }
+            } else {
+                socket.emit('message', "Erreur : vous devez spécifier un utilisateur et un message.");
+            }
+        } else if (username) {
+            // Messages normaux
+            const fullMessage = `${username} : ${msg}`;
+            console.log('Message reçu:', fullMessage);
 
             // Enregistrer le message dans MongoDB
             try {
-                const message = new Message({ content: msg });
+                const message = new Message({ content: fullMessage });
                 await message.save();
-                console.log('Message enregistré dans la base de données');
-            } catch (err) {
-                console.error('Erreur lors de l\'enregistrement du message :', err);
-            }
 
-            // Réémettre le message à tous les clients
-            io.emit('message', { text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
+                // Réémettre le message à tous les clients
+                io.emit('message', {
+                    text: fullMessage,                // Contenu du message
+                    sent: true,                       // Champ sent (vrai pour les nouveaux messages)
+                    timestamp: new Date().toISOString(), // Date actuelle en ISO
+                });
+            } catch (err) {
+                console.error('Erreur lors de l\'enregistrement du message:', err);
+            }
+        } else {
+            socket.emit('message', "Erreur : vous devez définir un nom d'utilisateur avant d'envoyer des messages.");
         }
     });
 
     // Gérer la déconnexion
     socket.on('disconnect', () => {
         if (username) {
+            delete connectedUsers[socket.id]; // Supprimer l'utilisateur de la liste des connectés
             console.log(`Un utilisateur s'est déconnecté : ${username}`);
             io.emit('user-disconnected', `${username} a quitté le chat`);
-            delete connectedUsers[socket.id];
         } else {
             console.log('Un utilisateur sans nom s\'est déconnecté');
         }
