@@ -51,7 +51,7 @@ export default function RegistrationModal() {
         <div>
             <Button
                 onClick={handleOpen}
-                style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000' }}
+                style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px' }}
             >
                 Register
             </Button>
@@ -85,7 +85,7 @@ export default function RegistrationModal() {
                                     id="email"
                                     label="Email Address"
                                     name="email"
-                                    autoComplete="email"
+                                    autoComplete="off"
                                     autoFocus
                                     value={formData.email}
                                     onChange={handleChange}
@@ -97,7 +97,7 @@ export default function RegistrationModal() {
                                     id="pseudo"
                                     label="Pseudo"
                                     name="pseudo"
-                                    autoComplete="pseudo"
+                                    autoComplete="off"
                                     autoFocus
                                     value={formData.pseudo}
                                     onChange={handleChange}
@@ -110,7 +110,7 @@ export default function RegistrationModal() {
                                     label="Password"
                                     type="password"
                                     id="password"
-                                    autoComplete="current-password"
+                                    autoComplete="off"
                                     value={formData.password}
                                     onChange={handleChange}
                                 />
@@ -122,7 +122,7 @@ export default function RegistrationModal() {
                                     label="Confirm password"
                                     type="password"
                                     id="passwordConfirm"
-                                    autoComplete="current-password"
+                                    autoComplete="off"
                                     value={formData.passwordConfirm}
                                     onChange={handleChange}
                                 />

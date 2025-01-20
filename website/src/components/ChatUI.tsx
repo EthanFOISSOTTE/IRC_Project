@@ -27,6 +27,7 @@ import { useEffect, useState } from 'react';
 import { useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import RegistrationModal from "./RegistrationModal.tsx";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 const ChatUI = () => {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -174,7 +175,9 @@ const ChatUI = () => {
                 <Typography variant="body2" color="text.secondary">
                     Channels
                 </Typography>
-                <AccountModal />
+                <AddCircleIcon
+                    style={{cursor: 'pointer'}}
+                />
             </div>
             <Stack spacing={2}>
                 {dummyChats.map((chat) => (
@@ -262,6 +265,8 @@ const ChatUI = () => {
                         <Typography variant="h6" sx={{ flexGrow: 1 }}>
                             IRC Project
                         </Typography>
+
+                        <AccountModal />
 
                         <RegistrationModal />
 

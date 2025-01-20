@@ -1,7 +1,6 @@
 import * as React from 'react';
 import Modal from '@mui/material/Modal';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import { Box, Button, TextField, Typography, Container, CssBaseline } from "@mui/material";
+import {Box, Button, TextField, Typography, Container, CssBaseline, useTheme} from "@mui/material";
 import {useState} from "react";
 
 const style = {
@@ -37,12 +36,16 @@ export default function AccountModal() {
             // Ajouter ici la logique pour gérer la connexion (API, validations, etc.)
         };
 
+    const theme = useTheme();
+
         return (
             <div>
-                <AddCircleIcon
+                <Button
                     onClick={handleOpen}
-                    style={{cursor: 'pointer'}}
-                />
+                    style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000' }}
+                >
+                    Connexion
+                </Button>
 
                 <Modal
                     open={open}
@@ -73,7 +76,7 @@ export default function AccountModal() {
                                         id="email"
                                         label="Adresse email"
                                         name="email"
-                                        autoComplete="email"
+                                        autoComplete="off"
                                         autoFocus
                                         value={formData.email}
                                         onChange={handleChange}
@@ -86,7 +89,7 @@ export default function AccountModal() {
                                         label="Mot de passe"
                                         type="password"
                                         id="password"
-                                        autoComplete="current-password"
+                                        autoComplete="off"
                                         value={formData.password}
                                         onChange={handleChange}
                                     />
