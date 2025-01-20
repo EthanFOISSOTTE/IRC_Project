@@ -322,17 +322,33 @@ const ChatUI = () => {
                             }}
                         >
                             {messages.map((message, index) => (
-                                <MessageContainer key={index} sent={message.sent}>
-                                    <MessageBubble sent={message.sent}>
-                                        <Typography variant="body1">{message.text}</Typography>
-                                        <Typography
-                                            variant="caption"
-                                            sx={{ display: "block", mt: 0.5, opacity: 0.7 }}
-                                        >
-                                            {message.timestamp}
-                                        </Typography>
-                                    </MessageBubble>
-                                </MessageContainer>
+                                <Box
+                                    key={index}
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: message.sent ? "flex-end" : "flex-start",
+                                        mb: 1,
+                                    }}
+                                >
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: 'red', fontSize: '0.875rem' }}
+                                    >
+                                        {message.sent ? 'You' : username}
+                                    </Typography>
+                                    <MessageContainer sent={message.sent}>
+                                        <MessageBubble sent={message.sent}>
+                                            <Typography variant="body1">{message.text}</Typography>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{ display: "block", mt: 0.5, opacity: 0.7 }}
+                                            >
+                                                {message.timestamp}
+                                            </Typography>
+                                        </MessageBubble>
+                                    </MessageContainer>
+                                </Box>
                             ))}
                             <div ref={messagesEndRef} />
                         </Box>
