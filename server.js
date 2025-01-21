@@ -57,10 +57,7 @@ app.post('/register', async (req, res) => {
         const newUser = new User({ id: uuidv4(), email, pseudo, password: hashedPassword });
         await newUser.save();
         res.status(201).send('Utilisateur créé avec succès');
-        global.username = pseudo; // Enregistrer le pseudo dans une variable globale
-        console.log(`Un utilisateur s'est connecté : ${global.username}`);
-        io.emit('user-connected', `${global.username} vient de rejoindre le chat`);
-
+        io.emit('user-connected', `${pseudo} vient de rejoindre le chat`);
     } catch (err) {
         res.status(400).send('Erreur lors de la création de l\'utilisateur');
     }
@@ -78,10 +75,8 @@ app.post('/login', async (req, res) => {
         if (!isPasswordValid) {
             return res.status(400).send('Mot de passe incorrect');
         }
-        global.username = user.pseudo; // Enregistrer le pseudo dans une variable globale
-        res.status(200).send('Connexion réussie');
-        io.emit('user-connected', `${global.username} vient de rejoindre le chat`);
-
+        res.status(200).send({ message: 'Connexion réussie', pseudo: user.pseudo });
+        io.emit('user-connected', `${user.pseudo} vient de rejoindre le chat`);
     } catch (err) {
         res.status(500).send('Erreur lors de la connexion');
     }
@@ -115,29 +110,25 @@ io.on('connection', async (socket) => {
     }
 
     // Écouter l'événement set-username
-   socket.on('set-username', (name) => {
-    if (global.username === null) {
+    socket.on('set-username', (name) => {
         if (name && name.trim() !== '') {
-            global.username = name.trim();
-            connectedUsers[socket.id] = global.username;
+            socket.username = name.trim();
+            connectedUsers[socket.id] = socket.username;
 
-            console.log(`Un utilisateur s'est connecté : ${global.username}`);
-            io.emit('user-connected', `${global.username} vient de rejoindre le chat`);
+            console.log(`Un utilisateur s'est connecté : ${socket.username}`);
+            io.emit('user-connected', `${socket.username} vient de rejoindre le chat`);
         }
-        console.log(`Un utilisateur s'est connecté : ${global.username}`);
-        io.emit('user-connected', `${global.username} vient de rejoindre le chat`);
-    }
-});
+    });
 
     // Écouter les messages envoyés par les utilisateurs
     socket.on('message', async (msg) => {
-        if (!global.username) {
+        if (!socket.username) {
             socket.emit('error', 'Vous devez être connecté pour envoyer des messages.');
             return;
         }
 
-        console.log(`Message reçu de ${global.username}: ${msg}`);
-        const username = global.username;
+        console.log(`Message reçu de ${socket.username}: ${msg}`);
+        const username = socket.username;
 
         // Enregistrer le message dans MongoDB
         try {
@@ -149,14 +140,14 @@ io.on('connection', async (socket) => {
         }
 
         // Réémettre le message à tous les clients
-        io.emit('message', { user: global.username, text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
+        io.emit('message', { user: socket.username, text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
     });
 
     // Gérer la déconnexion
     socket.on('disconnect', () => {
-        if (global.username) {
-            console.log(`Un utilisateur s'est déconnecté : ${global.username}`);
-            io.emit('user-disconnected', `${global.username} a quitté le chat`);
+        if (socket.username) {
+            console.log(`Un utilisateur s'est déconnecté : ${socket.username}`);
+            io.emit('user-disconnected', `${socket.username} a quitté le chat`);
             delete connectedUsers[socket.id];
         } else {
             console.log('Un utilisateur sans nom s\'est déconnecté');
