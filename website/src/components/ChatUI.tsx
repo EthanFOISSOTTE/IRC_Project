@@ -49,14 +49,14 @@ const ChatUI = () => {
     const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
     const handleSetUsername = () => {
-        const trimmedUsername = username.trim();
-        if (trimmedUsername && socket) {
-            socket.emit('set-username', trimmedUsername);
-            setIsUsernameSet(true);
-        } else {
-            alert('Veuillez entrer un nom d\'utilisateur.');
-        }
-    };
+    const trimmedUsername = username.trim();
+    if (trimmedUsername && socket) {
+        socket.emit('set-username', trimmedUsername);
+        setIsUsernameSet(true);
+    } else {
+        alert("Veuillez entrer un nom d'utilisateur.");
+    }
+};
 
     const customTheme = createTheme({
         palette: {
