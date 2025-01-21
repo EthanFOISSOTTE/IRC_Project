@@ -41,6 +41,7 @@ const ChatUI = () => {
 
     const [username, setUsername] = useState<string>('');
     const [isUsernameSet, setIsUsernameSet] = useState<boolean>(false);
+    const [isConnected, setIsConnected] = useState<boolean>(false);
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -52,14 +53,15 @@ const ChatUI = () => {
     const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
     const handleSetUsername = () => {
-    const trimmedUsername = username.trim();
-    if (trimmedUsername && socket) {
-        socket.emit('set-username', trimmedUsername);
-        setIsUsernameSet(true);
-    } else {
-        alert("Veuillez entrer un nom d'utilisateur.");
-    }
-};
+        const trimmedUsername = username.trim();
+        if (trimmedUsername && socket) {
+            socket.emit('set-username', trimmedUsername);
+            setIsUsernameSet(true);
+            setIsConnected(false);
+        } else {
+            alert("Veuillez entrer un nom d'utilisateur.");
+        }
+    };
 
     // Fonction pour formatter la date
     const formatDate = (dateString: string) => {
@@ -77,7 +79,7 @@ const ChatUI = () => {
 
     const scrollToBottom = () => {
         if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            messagesEndRef.current.scrollIntoView({behavior: 'smooth'});
         }
     };
 
@@ -155,15 +157,15 @@ const ChatUI = () => {
         });
 
         newSocket.on("welcome", (msg: string) => {
-            addMessage("🤖", msg, false);
+            addMessage("", msg, false);
         });
 
         newSocket.on("user-connected", (msg: string) => {
-            addMessage("🤖", `🟢 ${msg}`, false);
+            addMessage("", `🟢 ${msg}`, false);
         });
 
         newSocket.on("user-disconnected", (msg: string) => {
-            addMessage("🤖", `🔴 ${msg}`, false);
+            addMessage("", `🔴 ${msg}`, false);
         });
 
         return () => {
@@ -172,19 +174,20 @@ const ChatUI = () => {
     }, []);
 
     const addMessage = (user: string, text: string, sent: boolean, timestamp?: string) => {
-        setMessages((prev) => [...prev, { user, text, sent, timestamp: timestamp || "" }]);
+        setMessages((prev) => [...prev, {user, text, sent, timestamp: timestamp || ""}]);
     };
 
     const handleSendMessage = () => {
-        if (inputValue && socket) {
+        if (inputValue && socket && isUsernameSet) {
             socket.emit("message", inputValue);
+            addMessage(username, inputValue, true, new Date().toISOString());
             setInputValue("");
         }
     };
 
     const chatsList = (
         <>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{display: "flex", justifyContent: "space-between"}}>
                 <Typography variant="body2" color="text.secondary">
                     Channels
                 </Typography>
@@ -203,11 +206,11 @@ const ChatUI = () => {
                             cursor: "pointer",
                             p: 1,
                             borderRadius: 1,
-                            "&:hover": { backgroundColor: theme.palette.action.hover },
+                            "&:hover": {backgroundColor: theme.palette.action.hover},
                         }}
                         onClick={() => isMobile && handleDrawerToggle()}
                     >
-                        <ChatIcon style={{ fontSize: 40 }} />
+                        <ChatIcon style={{fontSize: 40}}/>
                         <Box>
                             <Typography variant="subtitle1" fontWeight="bold">
                                 {chat.name}
@@ -237,11 +240,11 @@ const ChatUI = () => {
                             cursor: "pointer",
                             borderRadius: 1,
                             paddingLeft: "10px",
-                            "&:hover": { backgroundColor: theme.palette.action.hover },
+                            "&:hover": {backgroundColor: theme.palette.action.hover},
                         }}
                         onClick={() => isMobile && handleDrawerToggle()}
                     >
-                        <PersonIcon style={{ fontSize: 20, paddingRight: '5px' }} />
+                        <PersonIcon style={{fontSize: 20, paddingRight: '5px'}}/>
                         <Box>
                             <Typography
                                 variant="subtitle1"
@@ -338,7 +341,12 @@ const ChatUI = () => {
                                 <MessageContainer key={index}>
                                     <MessageBubble>
                                         <Typography variant="body1" fontWeight="bold" fontSize={"small"} marginBottom={"3px"} display={"flex"} alignContent={"center"}>
-                                            <PersonIcon style={{ fontSize: 20, paddingRight: '3px' }} /> {message.user}
+                                            {message.user === "🤖" ? (
+                                                <span role="img" aria-label="robot">🤖</span>
+                                            ) : (
+                                                <PersonIcon style={{ fontSize: 20, paddingRight: '3px' }} />
+                                            )}
+                                            {message.user}
                                         </Typography>
                                         <Typography variant="body1">
                                             {message.text}
@@ -356,30 +364,7 @@ const ChatUI = () => {
                         </Box>
 
                         {/* New Message Input */}
-
-                        {!isUsernameSet ? (
-                            <Box id="username-container" sx={{ display: "flex", gap: 1 }}>
-                                <form onSubmit={(e) => { e.preventDefault(); handleSetUsername(); }} style={{ display: "flex", width: "100%" }}>
-                                    <TextField
-                                        id="username"
-                                        fullWidth
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        placeholder="Entrez votre nom d'utilisateur"
-                                        autoComplete="off"
-                                        value={username}
-                                    />
-                                    <IconButton
-                                        id="set-username"
-                                        color="primary"
-                                        aria-label="define username"
-                                        onClick={handleSetUsername}
-                                        type="submit"
-                                    >
-                                        <IoSend />
-                                    </IconButton>
-                                </form>
-                            </Box>
-                        ) : (
+                        {isUsernameSet || isConnected ? (
                             <Box id="form" sx={{ display: "flex", gap: 1 }}>
                                 <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} style={{ display: "flex", width: "100%" }}>
                                     <TextField
@@ -395,6 +380,28 @@ const ChatUI = () => {
                                         color="primary"
                                         aria-label="send message"
                                         onClick={handleSendMessage}
+                                        type="submit"
+                                    >
+                                        <IoSend />
+                                    </IconButton>
+                                </form>
+                            </Box>
+                        ) : (
+                            <Box id="username-container" sx={{ display: "flex", gap: 1 }}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleSetUsername(); }} style={{ display: "flex", width: "100%" }}>
+                                    <TextField
+                                        id="username"
+                                        fullWidth
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        placeholder="Entrez votre nom d'utilisateur"
+                                        autoComplete="off"
+                                        value={username}
+                                    />
+                                    <IconButton
+                                        id="set-username"
+                                        color="primary"
+                                        aria-label="define username"
+                                        onClick={handleSetUsername}
                                         type="submit"
                                     >
                                         <IoSend />
@@ -427,6 +434,6 @@ const ChatUI = () => {
             </Container>
         </ThemeProvider>
     );
-};
+}
 
 export default ChatUI;

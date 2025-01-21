@@ -59,7 +59,7 @@ app.post('/register', async (req, res) => {
         const newUser = new User({ id: uuidv4(), email, pseudo, password: hashedPassword });
         await newUser.save();
         res.status(201).send('Utilisateur créé avec succès');
-        io.emit('user-connected', `${pseudo} vient de rejoindre le chat`);
+        io.emit('user-connected', `${pseudo}`, 'vient de rejoindre le chat');
     } catch (err) {
         res.status(400).send('Erreur lors de la création de l\'utilisateur');
     }
@@ -140,7 +140,6 @@ io.on('connection', async (socket) => {
         console.error('Erreur lors de la récupération des messages :', err);
     }
 
-
     // Écouter l'événement set-username
     socket.on('set-username', (name) => {
         if (name && name.trim() !== '') {
@@ -207,17 +206,18 @@ io.on('connection', async (socket) => {
             const fullMessage = `${username} : ${msg}`;
             console.log('Message reçu:', fullMessage);
 
-        // Enregistrer le message dans MongoDB
-        try {
-            const message = new Message({ content: msg, username });
-            await message.save();
-            console.log('Message enregistré dans la base de données');
-        } catch (err) {
-            console.error('Erreur lors de l\'enregistrement du message :', err);
-        }
+            // Enregistrer le message dans MongoDB
+            try {
+                const message = new Message({ content: msg, username });
+                await message.save();
+                console.log('Message enregistré dans la base de données');
+            } catch (err) {
+                console.error('Erreur lors de l\'enregistrement du message :', err);
+            }
 
-        // Réémettre le message à tous les clients
-        io.emit('message', { user: socket.username, text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
+            // Réémettre le message à tous les clients
+            io.emit('message', { user: socket.username, text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
+        }
     });
 
     // Gérer la déconnexion
