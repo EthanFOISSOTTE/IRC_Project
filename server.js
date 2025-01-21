@@ -81,8 +81,9 @@ io.on('connection', async (socket) => {
 
         // Formater les messages dans le format attendu
         const formattedMessages = messages.map((msg) => ({
-            text: msg.content,           // Le contenu du message
-            sent: false,                 // Champ sent (défini comme false pour les anciens messages)
+            user: msg.content.split(' : ')[0], // Extraire le nom d'utilisateur
+            text: msg.content.split(' : ')[1], // Extraire le texte du message
+            sent: false, // Champ sent (défini comme false pour les anciens messages)
             timestamp: msg.timestamp.toISOString(), // Convertir la date en chaîne ISO
         }));
 
@@ -165,11 +166,7 @@ io.on('connection', async (socket) => {
                 await message.save();
 
                 // Réémettre le message à tous les clients
-                io.emit('message', {
-                    text: fullMessage,                // Contenu du message
-                    sent: true,                       // Champ sent (vrai pour les nouveaux messages)
-                    timestamp: new Date().toISOString(), // Date actuelle en ISO
-                });
+                io.emit('message', { user: username, text: msg, sent: false, timestamp: new Date().toISOString() });
             } catch (err) {
                 console.error('Erreur lors de l\'enregistrement du message:', err);
             }

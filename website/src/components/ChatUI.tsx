@@ -33,7 +33,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 const ChatUI = () => {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [messages, setMessages] = useState<
-        { text: string; sent: boolean; timestamp: string }[]
+        { user: string; text: string; sent: boolean; timestamp: string }[]
     >([]);
     const [inputValue, setInputValue] = useState("");
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -142,11 +142,11 @@ const ChatUI = () => {
 
         setSocket(newSocket);
 
-        newSocket.on("message", (msg: { text: string; sent: boolean; timestamp: string }) => {
-            addMessage(msg.text, msg.sent, msg.timestamp);
+        newSocket.on("message", (msg: { user: string; text: string; sent: boolean; timestamp: string }) => {
+            addMessage(msg.user, msg.text, msg.sent, msg.timestamp);
         });
 
-        newSocket.on("previousMessages", (msgs: { text: string; sent: boolean; timestamp: string }[]) => {
+        newSocket.on("previousMessages", (msgs: { user: string; text: string; sent: boolean; timestamp: string }[]) => {
             const formattedMessages = msgs.map((msg) => ({
                 ...msg,
                 sent: false,
@@ -155,15 +155,15 @@ const ChatUI = () => {
         });
 
         newSocket.on("welcome", (msg: string) => {
-            addMessage(msg, false);
+            addMessage("🤖", msg, false);
         });
 
         newSocket.on("user-connected", (msg: string) => {
-            addMessage(`🟢 ${msg}`, false);
+            addMessage("🤖", `🟢 ${msg}`, false);
         });
 
         newSocket.on("user-disconnected", (msg: string) => {
-            addMessage(`🔴 ${msg}`, false);
+            addMessage("🤖", `🔴 ${msg}`, false);
         });
 
         return () => {
@@ -171,8 +171,8 @@ const ChatUI = () => {
         };
     }, []);
 
-    const addMessage = (text: string, sent: boolean, timestamp?: string) => {
-        setMessages((prev) => [...prev, { text, sent, timestamp: timestamp || "" }]);
+    const addMessage = (user: string, text: string, sent: boolean, timestamp?: string) => {
+        setMessages((prev) => [...prev, { user, text, sent, timestamp: timestamp || "" }]);
     };
 
     const handleSendMessage = () => {
@@ -337,7 +337,12 @@ const ChatUI = () => {
                             {messages.map((message, index) => (
                                 <MessageContainer key={index}>
                                     <MessageBubble>
-                                        <Typography variant="body1">{message.text}</Typography>
+                                        <Typography variant="body1" fontWeight="bold" fontSize={"small"} marginBottom={"3px"} display={"flex"} alignContent={"center"}>
+                                            <PersonIcon style={{ fontSize: 20, paddingRight: '3px' }} /> {message.user}
+                                        </Typography>
+                                        <Typography variant="body1">
+                                            {message.text}
+                                        </Typography>
                                         <Typography
                                             variant="caption"
                                             sx={{ display: "block", mt: 0.5, opacity: 0.7 }}
