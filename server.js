@@ -6,6 +6,8 @@ const mongoose = require('mongoose');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
+const changeNickname = require('./commands/nick'); // Commande /nick
+const listUsers = require('./commands/users'); // Commande /users
 
 const app = express();
 const server = http.createServer(app);
@@ -94,9 +96,28 @@ app.get('*', (req, res) => {
 // Stockage temporaire des utilisateurs connectés
 const connectedUsers = {};
 
+// Fonction pour mettre à jour les messages avec un nouveau pseudo
+const updateMessagesWithNewUsername = async (oldUsername, newUsername) => {
+    try {
+        // Trouver tous les messages envoyés par l'utilisateur dont le pseudo a changé
+        const messagesToUpdate = await Message.find({ content: { $regex: `^${oldUsername} :` } });
+
+        // Mettre à jour uniquement les messages de l'utilisateur
+        for (const message of messagesToUpdate) {
+            message.content = message.content.replace(`${oldUsername} :`, `${newUsername} :`);
+            await message.save(); // Sauvegarder dans MongoDB
+        }
+
+        console.log(`Mise à jour de ${messagesToUpdate.length} messages avec le nouveau pseudo.`);
+    } catch (err) {
+        console.error('Erreur lors de la mise à jour des anciens messages:', err);
+    }
+};
+
 // Gérer les connexions Socket.IO
 io.on('connection', async (socket) => {
     console.log('Un utilisateur est connecté (en attente de nom)');
+    let username = null;
 
     // Envoyer un message de bienvenue au client connecté
     socket.emit('welcome', 'Bienvenue sur le chat!');
@@ -104,10 +125,21 @@ io.on('connection', async (socket) => {
     // Récupérer les messages depuis MongoDB et les envoyer au client
     try {
         const messages = await Message.find().sort({ timestamp: 1 });
-        socket.emit('previousMessages', messages);
+
+        // Formater les messages dans le format attendu
+        const formattedMessages = messages.map((msg) => ({
+            user: msg.content.split(' : ')[0], // Extraire le nom d'utilisateur
+            text: msg.content.split(' : ')[1], // Extraire le texte du message
+            sent: false, // Champ sent (défini comme false pour les anciens messages)
+            timestamp: msg.timestamp.toISOString(), // Convertir la date en chaîne ISO
+        }));
+
+        // Envoyer les messages formatés au client
+        socket.emit('previousMessages', formattedMessages);
     } catch (err) {
         console.error('Erreur lors de la récupération des messages :', err);
     }
+
 
     // Écouter l'événement set-username
     socket.on('set-username', (name) => {
@@ -120,15 +152,60 @@ io.on('connection', async (socket) => {
         }
     });
 
-    // Écouter les messages envoyés par les utilisateurs
+    // Gérer les messages des utilisateurs
     socket.on('message', async (msg) => {
-        if (!socket.username) {
-            socket.emit('error', 'Vous devez être connecté pour envoyer des messages.');
-            return;
-        }
+        if (msg.startsWith('/users')) {
+            // Commande /users
+            listUsers(socket, connectedUsers);
+        } else if (msg.startsWith('/nick ')) {
+            // Commande /nick
+            const newUsername = msg.split(' ')[1]; // Extraire le nouveau pseudo
+            if (newUsername) {
+                const oldUsername = username;
+                username = changeNickname(socket, newUsername, username, connectedUsers, io);
 
-        console.log(`Message reçu de ${socket.username}: ${msg}`);
-        const username = socket.username;
+                if (oldUsername !== username) {
+                    // Mettre à jour les anciens messages dans MongoDB
+                    await updateMessagesWithNewUsername(oldUsername, username);
+                }
+
+                io.emit('message', {
+                    text: `L'utilisateur ${oldUsername} vient de changer son pseudo pour : ${newUsername}.`,
+                    sent: true,
+                    timestamp: new Date().toISOString(),
+                });
+
+            } else {
+                socket.emit('message', "Erreur : vous devez spécifier un nouveau pseudo après /nick.");
+            }
+        } else if (msg.startsWith('/pm ')) {
+            // Commande /pm pour un message privé
+            const parts = msg.split(' ');
+            const targetUsername = parts[1]; // Nom de l'utilisateur cible
+            const privateMessage = parts.slice(2).join(' '); // Message privé
+
+            if (targetUsername && privateMessage) {
+                const targetSocketId = Object.keys(connectedUsers).find(id => connectedUsers[id] === targetUsername);
+
+                if (targetSocketId) {
+                    // L'utilisateur cible est connecté
+                    io.to(targetSocketId).emit('private-message', {
+                        from: username,
+                        message: privateMessage,
+                    });
+
+                    // Confirmer à l'expéditeur que le message a été envoyé
+                    socket.emit('message', `Message privé envoyé à ${targetUsername}: ${privateMessage}`);
+                } else {
+                    socket.emit('message', `Erreur : l'utilisateur ${targetUsername} n'est pas connecté.`);
+                }
+            } else {
+                socket.emit('message', "Erreur : vous devez spécifier un utilisateur et un message.");
+            }
+        } else if (username) {
+            // Messages normaux
+            const fullMessage = `${username} : ${msg}`;
+            console.log('Message reçu:', fullMessage);
 
         // Enregistrer le message dans MongoDB
         try {

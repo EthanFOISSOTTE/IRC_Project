@@ -24,13 +24,16 @@ import MessageContainer from "./MessageContainer";
 import MessageBubble from "./MessageBubble";
 import AccountModal from "./AccountModal";
 import { useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import RegistrationModal from "./RegistrationModal.tsx";
+import { format } from 'date-fns';
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 const ChatUI = () => {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [messages, setMessages] = useState<
-        { text: string; sent: boolean; timestamp: string }[]
+        { user: string; text: string; sent: boolean; timestamp: string }[]
     >([]);
     const [inputValue, setInputValue] = useState("");
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -57,6 +60,26 @@ const ChatUI = () => {
         alert("Veuillez entrer un nom d'utilisateur.");
     }
 };
+
+    // Fonction pour formatter la date
+    const formatDate = (dateString: string) => {
+        if (!dateString) {
+            return "";
+        }
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return "Invalid date";
+        }
+        return format(date, 'dd/MM/yyyy HH:mm');
+    };
+
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
     const customTheme = createTheme({
         palette: {
@@ -109,22 +132,21 @@ const ChatUI = () => {
     ];
 
     useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    useEffect(() => {
         const newSocket = io(`ws://${window.location.hostname}:3000`, {
             withCredentials: true,
         });
 
         setSocket(newSocket);
 
-
-        newSocket.on("welcome", (msg: string) => {
-            addMessage(msg, false);
+        newSocket.on("message", (msg: { user: string; text: string; sent: boolean; timestamp: string }) => {
+            addMessage(msg.user, msg.text, msg.sent, msg.timestamp);
         });
 
-        newSocket.on("message", (msg: { text: string; sent: boolean; timestamp: string }) => {
-            addMessage(msg.text, msg.sent, msg.timestamp);
-        });
-
-        newSocket.on("previousMessages", (msgs: { text: string; sent: boolean; timestamp: string }[]) => {
+        newSocket.on("previousMessages", (msgs: { user: string; text: string; sent: boolean; timestamp: string }[]) => {
             const formattedMessages = msgs.map((msg) => ({
                 ...msg,
                 sent: false,
@@ -132,12 +154,16 @@ const ChatUI = () => {
             setMessages((prev) => [...prev, ...formattedMessages]);
         });
 
+        newSocket.on("welcome", (msg: string) => {
+            addMessage("🤖", msg, false);
+        });
+
         newSocket.on("user-connected", (msg: string) => {
-            addMessage(`🟢 ${msg}`, false);
+            addMessage("🤖", `🟢 ${msg}`, false);
         });
 
         newSocket.on("user-disconnected", (msg: string) => {
-            addMessage(`🔴 ${msg}`, false);
+            addMessage("🤖", `🔴 ${msg}`, false);
         });
 
         return () => {
@@ -145,8 +171,8 @@ const ChatUI = () => {
         };
     }, []);
 
-    const addMessage = (text: string, sent: boolean, timestamp: string = new Date().toLocaleTimeString()) => {
-        setMessages((prev) => [...prev, { text, sent, timestamp }]);
+    const addMessage = (user: string, text: string, sent: boolean, timestamp?: string) => {
+        setMessages((prev) => [...prev, { user, text, sent, timestamp: timestamp || "" }]);
     };
 
     const handleSendMessage = () => {
@@ -162,7 +188,9 @@ const ChatUI = () => {
                 <Typography variant="body2" color="text.secondary">
                     Channels
                 </Typography>
-                <AccountModal />
+                <AddCircleIcon
+                    style={{cursor: 'pointer'}}
+                />
             </div>
             <Stack spacing={2}>
                 {dummyChats.map((chat) => (
@@ -251,6 +279,8 @@ const ChatUI = () => {
                             IRC Project
                         </Typography>
 
+                        <AccountModal />
+
                         <RegistrationModal />
 
                         <IconButton onClick={toggleTheme} color="inherit">
@@ -305,57 +335,71 @@ const ChatUI = () => {
                             }}
                         >
                             {messages.map((message, index) => (
-                                <MessageContainer key={index} sent={message.sent}>
-                                    <MessageBubble sent={message.sent}>
-                                        <Typography variant="body1">{message.text}</Typography>
+                                <MessageContainer key={index}>
+                                    <MessageBubble>
+                                        <Typography variant="body1" fontWeight="bold" fontSize={"small"} marginBottom={"3px"} display={"flex"} alignContent={"center"}>
+                                            <PersonIcon style={{ fontSize: 20, paddingRight: '3px' }} /> {message.user}
+                                        </Typography>
+                                        <Typography variant="body1">
+                                            {message.text}
+                                        </Typography>
                                         <Typography
                                             variant="caption"
                                             sx={{ display: "block", mt: 0.5, opacity: 0.7 }}
                                         >
-                                            {message.timestamp}
+                                            {formatDate(message.timestamp)}
                                         </Typography>
                                     </MessageBubble>
                                 </MessageContainer>
                             ))}
+                            <div ref={messagesEndRef} />
                         </Box>
 
                         {/* New Message Input */}
 
                         {!isUsernameSet ? (
-                            <Box id="username-container" sx={{display: "flex", gap: 1}}>
-                                <TextField
-                                    id="username"
-                                    fullWidth
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="Entrez votre nom d'utilisateur"
-                                    value={username}
-                                />
-                                <IconButton
-                                    id="set-username"
-                                    color="primary"
-                                    aria-label="define username"
-                                    onClick={handleSetUsername}
-                                >
-                                    <IoSend/>
-                                </IconButton>
+                            <Box id="username-container" sx={{ display: "flex", gap: 1 }}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleSetUsername(); }} style={{ display: "flex", width: "100%" }}>
+                                    <TextField
+                                        id="username"
+                                        fullWidth
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        placeholder="Entrez votre nom d'utilisateur"
+                                        autoComplete="off"
+                                        value={username}
+                                    />
+                                    <IconButton
+                                        id="set-username"
+                                        color="primary"
+                                        aria-label="define username"
+                                        onClick={handleSetUsername}
+                                        type="submit"
+                                    >
+                                        <IoSend />
+                                    </IconButton>
+                                </form>
                             </Box>
                         ) : (
-                            <Box id="form" sx={{display: "flex", gap: 1}}>
-                                <TextField
-                                    id="input"
-                                    fullWidth
-                                    placeholder="Type a message"
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                />
-                                <IconButton
-                                    id="sendButton"
-                                    color="primary"
-                                    aria-label="send message"
-                                    onClick={handleSendMessage}
-                                >
-                                    <IoSend />
-                                </IconButton>
+                            <Box id="form" sx={{ display: "flex", gap: 1 }}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} style={{ display: "flex", width: "100%" }}>
+                                    <TextField
+                                        id="input"
+                                        fullWidth
+                                        placeholder="Type a message"
+                                        value={inputValue}
+                                        autoComplete="off"
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                    />
+                                    <IconButton
+                                        id="sendButton"
+                                        color="primary"
+                                        aria-label="send message"
+                                        onClick={handleSendMessage}
+                                        type="submit"
+                                    >
+                                        <IoSend />
+                                    </IconButton>
+                                </form>
                             </Box>
                         )}
 
