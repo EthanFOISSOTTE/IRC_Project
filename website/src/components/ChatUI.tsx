@@ -27,6 +27,7 @@ import { useEffect, useState } from 'react';
 import { useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import RegistrationModal from "./RegistrationModal.tsx";
+import { format } from 'date-fns';
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 
 const ChatUI = () => {
@@ -58,6 +59,18 @@ const ChatUI = () => {
         } else {
             alert('Veuillez entrer un nom d\'utilisateur.');
         }
+    };
+
+    // Fonction pour formatter la date
+    const formatDate = (dateString: string) => {
+        if (!dateString) {
+            return "";
+        }
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return "Invalid date";
+        }
+        return format(date, 'dd/MM/yyyy HH:mm');
     };
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -129,10 +142,6 @@ const ChatUI = () => {
 
         setSocket(newSocket);
 
-        newSocket.on("welcome", (msg: string) => {
-            addMessage(msg, false);
-        });
-
         newSocket.on("message", (msg: { text: string; sent: boolean; timestamp: string }) => {
             addMessage(msg.text, msg.sent, msg.timestamp);
         });
@@ -143,6 +152,10 @@ const ChatUI = () => {
                 sent: false,
             }));
             setMessages((prev) => [...prev, ...formattedMessages]);
+        });
+
+        newSocket.on("welcome", (msg: string) => {
+            addMessage(msg, false);
         });
 
         newSocket.on("user-connected", (msg: string) => {
@@ -158,8 +171,8 @@ const ChatUI = () => {
         };
     }, []);
 
-    const addMessage = (text: string, sent: boolean, timestamp: string = new Date().toLocaleTimeString()) => {
-        setMessages((prev) => [...prev, { text, sent, timestamp }]);
+    const addMessage = (text: string, sent: boolean, timestamp?: string) => {
+        setMessages((prev) => [...prev, { text, sent, timestamp: timestamp || "" }]);
     };
 
     const handleSendMessage = () => {
@@ -322,33 +335,17 @@ const ChatUI = () => {
                             }}
                         >
                             {messages.map((message, index) => (
-                                <Box
-                                    key={index}
-                                    sx={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: message.sent ? "flex-end" : "flex-start",
-                                        mb: 1,
-                                    }}
-                                >
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ color: 'red', fontSize: '0.875rem' }}
-                                    >
-                                        {message.sent ? 'You' : username}
-                                    </Typography>
-                                    <MessageContainer sent={message.sent}>
-                                        <MessageBubble sent={message.sent}>
-                                            <Typography variant="body1">{message.text}</Typography>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{ display: "block", mt: 0.5, opacity: 0.7 }}
-                                            >
-                                                {message.timestamp}
-                                            </Typography>
-                                        </MessageBubble>
-                                    </MessageContainer>
-                                </Box>
+                                <MessageContainer key={index}>
+                                    <MessageBubble>
+                                        <Typography variant="body1">{message.text}</Typography>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{ display: "block", mt: 0.5, opacity: 0.7 }}
+                                        >
+                                            {formatDate(message.timestamp)}
+                                        </Typography>
+                                    </MessageBubble>
+                                </MessageContainer>
                             ))}
                             <div ref={messagesEndRef} />
                         </Box>
