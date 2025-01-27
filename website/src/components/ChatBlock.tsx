@@ -52,6 +52,7 @@ const ChatBlock = () => {
                         setIsConnected={setIsConnected}
                         setIsUsernameSet={setIsUsernameSet}
                         setUsername={setUsername}
+                        socket={socket}
                     />
                     {!isConnected && <RegistrationModal />}
                     <hr style={{width: "100%"}}/>
@@ -73,7 +74,8 @@ const ChatBlock = () => {
         const trimmedUsername = username.trim();
         if (trimmedUsername && socket) {
             socket.emit('set-username', trimmedUsername);
-            setIsUsernameSet(true); // Mettre à jour isUsernameSet à true
+            setIsUsernameSet(true);
+            setIsConnected(true); // Mettre à jour isConnected à true
             console.log("Nom d'utilisateur défini:", trimmedUsername);
         } else {
             alert("Veuillez entrer un nom d'utilisateur.");
@@ -85,7 +87,6 @@ const ChatBlock = () => {
     const handleSendMessage = () => {
         if (inputValue && socket && isUsernameSet) {
             socket.emit("message", { text: inputValue, user: username }); // Envoyer le message avec le pseudo
-            addMessage(username, inputValue, true, new Date().toISOString());
             setInputValue("");
             console.log("Message envoyé:", inputValue);
         }
@@ -177,6 +178,7 @@ const ChatBlock = () => {
                                     setIsConnected={setIsConnected}
                                     setIsUsernameSet={setIsUsernameSet}
                                     setUsername={setUsername}
+                                    socket={socket}
                                 />
                                 {!isConnected && <RegistrationModal />}
                             </>

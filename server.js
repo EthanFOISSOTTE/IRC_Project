@@ -78,7 +78,8 @@ app.post('/login', async (req, res) => {
             return res.status(400).send('Mot de passe incorrect');
         }
         res.status(200).send({ message: 'Connexion réussie', pseudo: user.pseudo });
-        io.emit('user-connected', `${user.pseudo} vient de rejoindre le chat`);
+        // Remove this line to prevent double emission
+        // io.emit('user-connected', `${user.pseudo} vient de rejoindre le chat`);
     } catch (err) {
         res.status(500).send('Erreur lors de la connexion');
     }
@@ -122,6 +123,11 @@ io.on('connection', async (socket) => {
     // Envoyer un message de bienvenue au client connecté
     socket.emit('welcome', 'Bienvenue sur le chat!');
 
+    // Envoyer la liste des utilisateurs connectés
+    const sendConnectedUsers = () => {
+        io.emit('connected-users', Object.values(connectedUsers));
+    };
+
     // Récupérer les messages depuis MongoDB et les envoyer au client
     try {
         const messages = await Message.find().sort({ timestamp: 1 });
@@ -145,9 +151,9 @@ io.on('connection', async (socket) => {
         if (name && name.trim() !== '') {
             username = name.trim();
             connectedUsers[socket.id] = username;
-
             console.log(`Un utilisateur s'est connecté : ${username}`);
             io.emit('user-connected', `${username} vient de rejoindre le chat`);
+            sendConnectedUsers();
         }
     });
 
@@ -206,14 +212,20 @@ io.on('connection', async (socket) => {
 
             // Enregistrer le message dans MongoDB
             try {
-                const message = new Message({ content: msg.text, username: msg.user });
+                const message = new Message({ content: msg.text, username: username });
                 await message.save();
                 console.log('Message enregistré dans la base de données');
+
+                // Émettre le message à tous les clients connectés
+                io.emit('message', {
+                    user: username,
+                    text: msg.text,
+                    sent: true,
+                    timestamp: new Date().toISOString(),
+                });
             } catch (err) {
                 console.error('Erreur lors de l\'enregistrement du message :', err);
             }
-
-            // Ne pas réémettre le message à tous les clients
         }
     });
 
@@ -223,6 +235,7 @@ io.on('connection', async (socket) => {
             console.log(`Un utilisateur s'est déconnecté : ${username}`);
             io.emit('user-disconnected', `${username} a quitté le chat`);
             delete connectedUsers[socket.id];
+            sendConnectedUsers();
         } else {
             console.log('Un utilisateur sans nom s\'est déconnecté');
         }

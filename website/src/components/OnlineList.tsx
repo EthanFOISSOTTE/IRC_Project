@@ -1,15 +1,9 @@
+import { useEffect, useState } from "react";
 import { Box, Stack, Typography, useTheme } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
+import { io } from "socket.io-client";
 
-const dummyOnlines = [
-    { id: 1, name: "John" },
-    { id: 2, name: "Liane" },
-    { id: 3, name: "Ethane" },
-    { id: 4, name: "Alexy" },
-    { id: 5, name: "Jean" },
-    { id: 6, name: "Deyan" },
-    { id: 7, name: "Mickael" },
-];
+const socket = io("http://localhost:3000");
 
 interface OnlineListProps {
     isMobile: boolean;
@@ -18,6 +12,17 @@ interface OnlineListProps {
 
 const OnlineList: React.FC<OnlineListProps> = ({ isMobile, handleDrawerToggle }) => {
     const theme = useTheme();
+    const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+
+    useEffect(() => {
+        socket.on("connected-users", (users: string[]) => {
+            setOnlineUsers(users);
+        });
+
+        return () => {
+            socket.off("connected-users");
+        };
+    }, []);
 
     return (
         <>
@@ -28,9 +33,9 @@ const OnlineList: React.FC<OnlineListProps> = ({ isMobile, handleDrawerToggle })
             )}
 
             <Stack spacing={2}>
-                {dummyOnlines.map((online) => (
+                {onlineUsers.map((name, index) => (
                     <Box
-                        key={online.id}
+                        key={index}
                         sx={{
                             display: "flex",
                             alignItems: "center",
@@ -48,7 +53,7 @@ const OnlineList: React.FC<OnlineListProps> = ({ isMobile, handleDrawerToggle })
                                 fontWeight="bold"
                                 fontSize="0.875rem"
                             >
-                                {online.name}
+                                {name}
                             </Typography>
                         </Box>
                     </Box>

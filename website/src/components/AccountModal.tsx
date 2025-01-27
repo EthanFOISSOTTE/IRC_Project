@@ -3,12 +3,14 @@ import Modal from '@mui/material/Modal';
 import { Box, Button, TextField, Typography, Container, CssBaseline, useTheme } from "@mui/material";
 import { useState } from "react";
 import axios from 'axios';
+import {Socket} from "socket.io-client";
 
 interface AccountModalProps {
     isConnected: boolean;
     setIsConnected: (isConnected: boolean) => void;
     setIsUsernameSet: (isUsernameSet: boolean) => void;
     setUsername: (username: string) => void;
+    socket: Socket | null;
 }
 
 const style = {
@@ -23,7 +25,7 @@ const style = {
     p: 4,
 };
 
-export default function AccountModal({ isConnected, setIsConnected, setIsUsernameSet, setUsername }: AccountModalProps) {
+export default function AccountModal({ isConnected, setIsConnected, setIsUsernameSet, setUsername, socket }: AccountModalProps) {
     const [open, setOpen] = useState(false);
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
@@ -48,6 +50,9 @@ export default function AccountModal({ isConnected, setIsConnected, setIsUsernam
             setIsConnected(true);
             setIsUsernameSet(true);
             setUsername(response.data.pseudo);
+            if (socket) {
+                socket.emit('set-username', response.data.pseudo);
+            }
             handleClose();
         } catch (err) {
             console.error("Erreur lors de la connexion", err);
