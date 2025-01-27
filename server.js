@@ -202,9 +202,7 @@ io.on('connection', async (socket) => {
                 socket.emit('message', "Erreur : vous devez spécifier un utilisateur et un message.");
             }
         } else if (username) {
-            // Messages normaux
-            const fullMessage = `${username} : ${msg}`;
-            console.log('Message reçu:', fullMessage);
+            console.log('Message reçu:', msg);
 
             // Enregistrer le message dans MongoDB
             try {
@@ -215,8 +213,7 @@ io.on('connection', async (socket) => {
                 console.error('Erreur lors de l\'enregistrement du message :', err);
             }
 
-            // Réémettre le message à tous les clients
-            io.emit('message', { user: username, text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
+            // Ne pas réémettre le message à tous les clients
         }
     });
 
