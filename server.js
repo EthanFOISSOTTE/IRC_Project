@@ -59,7 +59,7 @@ app.post('/register', async (req, res) => {
         const newUser = new User({ id: uuidv4(), email, pseudo, password: hashedPassword });
         await newUser.save();
         res.status(201).send('Utilisateur créé avec succès');
-        io.emit('user-connected', `${pseudo}`, 'vient de rejoindre le chat');
+        io.emit('user-connected', `${pseudo} vient de rejoindre le chat`);
     } catch (err) {
         res.status(400).send('Erreur lors de la création de l\'utilisateur');
     }
@@ -128,8 +128,8 @@ io.on('connection', async (socket) => {
 
         // Formater les messages dans le format attendu
         const formattedMessages = messages.map((msg) => ({
-            user: msg.content.split(' : ')[0], // Extraire le nom d'utilisateur
-            text: msg.content.split(' : ')[1], // Extraire le texte du message
+            user: msg.username, // Utiliser le champ username
+            text: msg.content, // Utiliser le champ content
             sent: false, // Champ sent (défini comme false pour les anciens messages)
             timestamp: msg.timestamp.toISOString(), // Convertir la date en chaîne ISO
         }));
@@ -143,11 +143,11 @@ io.on('connection', async (socket) => {
     // Écouter l'événement set-username
     socket.on('set-username', (name) => {
         if (name && name.trim() !== '') {
-            socket.username = name.trim();
-            connectedUsers[socket.id] = socket.username;
+            username = name.trim();
+            connectedUsers[socket.id] = username;
 
-            console.log(`Un utilisateur s'est connecté : ${socket.username}`);
-            io.emit('user-connected', `${socket.username} vient de rejoindre le chat`);
+            console.log(`Un utilisateur s'est connecté : ${username}`);
+            io.emit('user-connected', `${username} vient de rejoindre le chat`);
         }
     });
 
@@ -216,15 +216,15 @@ io.on('connection', async (socket) => {
             }
 
             // Réémettre le message à tous les clients
-            io.emit('message', { user: socket.username, text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
+            io.emit('message', { user: username, text: msg, sent: false, timestamp: new Date().toLocaleTimeString() });
         }
     });
 
     // Gérer la déconnexion
     socket.on('disconnect', () => {
-        if (socket.username) {
-            console.log(`Un utilisateur s'est déconnecté : ${socket.username}`);
-            io.emit('user-disconnected', `${socket.username} a quitté le chat`);
+        if (username) {
+            console.log(`Un utilisateur s'est déconnecté : ${username}`);
+            io.emit('user-disconnected', `${username} a quitté le chat`);
             delete connectedUsers[socket.id];
         } else {
             console.log('Un utilisateur sans nom s\'est déconnecté');

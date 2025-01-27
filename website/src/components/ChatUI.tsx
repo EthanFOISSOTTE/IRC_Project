@@ -58,6 +58,7 @@ const ChatUI = () => {
             socket.emit('set-username', trimmedUsername);
             setIsUsernameSet(true);
             setIsConnected(false);
+            console.log("Nom d'utilisateur défini:", trimmedUsername);
         } else {
             alert("Veuillez entrer un nom d'utilisateur.");
         }
@@ -117,7 +118,7 @@ const ChatUI = () => {
         },
         {
             id: 4,
-            name: "Alexis"
+            name: "Alexy"
         },
         {
             id: 5,
@@ -182,6 +183,7 @@ const ChatUI = () => {
             socket.emit("message", inputValue);
             addMessage(username, inputValue, true, new Date().toISOString());
             setInputValue("");
+            console.log("Message envoyé:", inputValue);
         }
     };
 
