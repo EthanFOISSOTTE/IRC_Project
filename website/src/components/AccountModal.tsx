@@ -8,7 +8,7 @@ interface AccountModalProps {
     isConnected: boolean;
     setIsConnected: (isConnected: boolean) => void;
     setIsUsernameSet: (isUsernameSet: boolean) => void;
-    setUsername: (username: string) => void; // Add setUsername to the props
+    setUsername: (username: string) => void;
 }
 
 const style = {
@@ -33,6 +33,8 @@ export default function AccountModal({ isConnected, setIsConnected, setIsUsernam
         password: "",
     });
 
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -49,12 +51,13 @@ export default function AccountModal({ isConnected, setIsConnected, setIsUsernam
             handleClose();
         } catch (err) {
             console.error("Erreur lors de la connexion", err);
+            setErrorMessage("Identifiants incorrects. Veuillez réessayer.");
         }
     };
 
     const handleLogout = () => {
         setIsConnected(false);
-        console.log("Déconnexion réussie");
+        window.location.reload(); // Recharger la page
     };
 
     const theme = useTheme();
@@ -122,6 +125,11 @@ export default function AccountModal({ isConnected, setIsConnected, setIsUsernam
                                     value={formData.password}
                                     onChange={handleChange}
                                 />
+                                {errorMessage && (
+                                    <Typography color="error" variant="body2" align="center">
+                                        {errorMessage}
+                                    </Typography>
+                                )}
                                 <Button
                                     type="submit"
                                     fullWidth
