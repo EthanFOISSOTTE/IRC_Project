@@ -343,7 +343,7 @@ const ChatUI = () => {
                                 <MessageContainer key={index}>
                                     <MessageBubble>
                                         <Typography variant="body1" fontWeight="bold" fontSize={"small"} marginBottom={"3px"} display={"flex"} alignContent={"center"}>
-                                            {message.user === "🤖" ? (
+                                            {message.user === "" ? (
                                                 <span role="img" aria-label="robot">🤖</span>
                                             ) : (
                                                 <PersonIcon style={{ fontSize: 20, paddingRight: '3px' }} />
