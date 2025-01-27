@@ -4,6 +4,13 @@ import { Box, Button, TextField, Typography, Container, CssBaseline, useTheme } 
 import { useState } from "react";
 import axios from 'axios';
 
+interface AccountModalProps {
+    isConnected: boolean;
+    setIsConnected: (isConnected: boolean) => void;
+    setIsUsernameSet: (isUsernameSet: boolean) => void;
+    setUsername: (username: string) => void; // Add setUsername to the props
+}
+
 const style = {
     position: 'absolute',
     top: '50%',
@@ -16,7 +23,7 @@ const style = {
     p: 4,
 };
 
-export default function AccountModal() {
+export default function AccountModal({ isConnected, setIsConnected, setIsUsernameSet, setUsername }: AccountModalProps) {
     const [open, setOpen] = useState(false);
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
@@ -36,22 +43,39 @@ export default function AccountModal() {
         try {
             const response = await axios.post('/login', formData);
             console.log("Connexion réussie:", response.data);
+            setIsConnected(true);
+            setIsUsernameSet(true);
+            setUsername(response.data.pseudo);
             handleClose();
         } catch (err) {
             console.error("Erreur lors de la connexion", err);
         }
     };
 
+    const handleLogout = () => {
+        setIsConnected(false);
+        console.log("Déconnexion réussie");
+    };
+
     const theme = useTheme();
 
     return (
         <div>
-            <Button
-                onClick={handleOpen}
-                style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
-            >
-                Connexion
-            </Button>
+            {isConnected ? (
+                <Button
+                    onClick={handleLogout}
+                    style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
+                >
+                    Déconnexion
+                </Button>
+            ) : (
+                <Button
+                    onClick={handleOpen}
+                    style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
+                >
+                    Connexion
+                </Button>
+            )}
 
             <Modal
                 open={open}

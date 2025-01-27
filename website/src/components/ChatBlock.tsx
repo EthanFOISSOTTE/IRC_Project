@@ -47,8 +47,13 @@ const ChatBlock = () => {
         >
             <Box sx={{ p: 2 }}>
                 <SidePanel>
-                    <AccountModal/>
-                    <RegistrationModal/>
+                    <AccountModal
+                        isConnected={isConnected}
+                        setIsConnected={setIsConnected}
+                        setIsUsernameSet={setIsUsernameSet}
+                        setUsername={setUsername}
+                    />
+                    {!isConnected && <RegistrationModal />}
                     <hr style={{width: "100%"}}/>
                     <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle}/>
                 </SidePanel>
@@ -68,8 +73,7 @@ const ChatBlock = () => {
         const trimmedUsername = username.trim();
         if (trimmedUsername && socket) {
             socket.emit('set-username', trimmedUsername);
-            setIsUsernameSet(true);
-            setIsConnected(false);
+            setIsUsernameSet(true); // Mettre à jour isUsernameSet à true
             console.log("Nom d'utilisateur défini:", trimmedUsername);
         } else {
             alert("Veuillez entrer un nom d'utilisateur.");
@@ -80,7 +84,7 @@ const ChatBlock = () => {
     };
     const handleSendMessage = () => {
         if (inputValue && socket && isUsernameSet) {
-            socket.emit("message", inputValue);
+            socket.emit("message", { text: inputValue, user: username }); // Envoyer le message avec le pseudo
             addMessage(username, inputValue, true, new Date().toISOString());
             setInputValue("");
             console.log("Message envoyé:", inputValue);
@@ -151,8 +155,6 @@ const ChatBlock = () => {
         <ThemeProvider theme={customTheme}>
             <CssBaseline />
             <Container sx={{ height: "100vh", width: "100vw", p: { xs: 0, md: 2 } }}>
-
-                {/* Header */}
                 <AppBar position="static" color="inherit" elevation={1}>
                     <Toolbar>
                         {isMobile && (
@@ -165,36 +167,31 @@ const ChatBlock = () => {
                                 <IoMenu />
                             </IconButton>
                         )}
-
                         <Typography variant="h6" sx={{ flexGrow: 1 }}>
                             IRC Project
                         </Typography>
-
                         {!isMobile && (
                             <>
-                                <AccountModal />
-                                <RegistrationModal />
+                                <AccountModal
+                                    isConnected={isConnected}
+                                    setIsConnected={setIsConnected}
+                                    setIsUsernameSet={setIsUsernameSet}
+                                    setUsername={setUsername}
+                                />
+                                {!isConnected && <RegistrationModal />}
                             </>
                         )}
-
                         <IconButton onClick={toggleTheme} color="inherit">
                             {theme.palette.mode === "dark" ? <IoSunny /> : <IoMoon />}
                         </IconButton>
-
                     </Toolbar>
                 </AppBar>
-
-                {/* Chat Layout */}
                 <StyledChatContainer>
-
-                    {/* Channels List */}
                     {isMobile ? renderMobileMenu() : (
                         <SidePanel elevation={2}>
                             <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} />
                         </SidePanel>
                     )}
-
-                    {/* Chat Area */}
                     <ChatAreaChannel
                         messages={messages}
                         inputValue={inputValue}
@@ -207,16 +204,12 @@ const ChatBlock = () => {
                         handleSetUsername={handleSetUsername}
                         formatDate={formatDate}
                     />
-
-                    {/* Online Users */}
                     {isMobile ? renderMobileMenu() : (
                         <SidePanel elevation={2}>
                             <OnlineList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} />
                         </SidePanel>
                     )}
-
                 </StyledChatContainer>
-
             </Container>
         </ThemeProvider>
     );

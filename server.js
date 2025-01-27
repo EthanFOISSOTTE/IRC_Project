@@ -153,12 +153,12 @@ io.on('connection', async (socket) => {
 
     // Gérer les messages des utilisateurs
     socket.on('message', async (msg) => {
-        if (msg.startsWith('/users')) {
+        if (msg.text.startsWith('/users')) {
             // Commande /users
             listUsers(socket, connectedUsers);
-        } else if (msg.startsWith('/nick ')) {
+        } else if (msg.text.startsWith('/nick ')) {
             // Commande /nick
-            const newUsername = msg.split(' ')[1]; // Extraire le nouveau pseudo
+            const newUsername = msg.text.split(' ')[1]; // Extraire le nouveau pseudo
             if (newUsername) {
                 const oldUsername = username;
                 username = changeNickname(socket, newUsername, username, connectedUsers, io);
@@ -177,9 +177,9 @@ io.on('connection', async (socket) => {
             } else {
                 socket.emit('message', "Erreur : vous devez spécifier un nouveau pseudo après /nick.");
             }
-        } else if (msg.startsWith('/pm ')) {
+        } else if (msg.text.startsWith('/pm ')) {
             // Commande /pm pour un message privé
-            const parts = msg.split(' ');
+            const parts = msg.text.split(' ');
             const targetUsername = parts[1]; // Nom de l'utilisateur cible
             const privateMessage = parts.slice(2).join(' '); // Message privé
 
@@ -202,11 +202,11 @@ io.on('connection', async (socket) => {
                 socket.emit('message', "Erreur : vous devez spécifier un utilisateur et un message.");
             }
         } else if (username) {
-            console.log('Message reçu:', msg);
+            console.log('Message reçu:', msg.text);
 
             // Enregistrer le message dans MongoDB
             try {
-                const message = new Message({ content: msg, username });
+                const message = new Message({ content: msg.text, username: msg.user });
                 await message.save();
                 console.log('Message enregistré dans la base de données');
             } catch (err) {
