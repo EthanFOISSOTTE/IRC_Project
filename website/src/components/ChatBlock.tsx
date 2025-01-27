@@ -25,6 +25,8 @@ import ChannelsList from "./ChannelsList.tsx";
 import ChatAreaChannel from "./ChatAreaChannel.tsx";
 
 const ChatBlock = () => {
+    const theme = useTheme();
+
     {/* Socket */}
     const [socket, setSocket] = useState<Socket | null>(null);
 
@@ -84,7 +86,6 @@ const ChatBlock = () => {
     };
 
     {/* Thème */}
-    const theme = useTheme();
     const toggleTheme = () => {
         setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
     };
