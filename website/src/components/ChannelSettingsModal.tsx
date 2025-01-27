@@ -5,6 +5,7 @@ import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import OnlineList from "./OnlineList";
 
 const style = {
     position: 'absolute',
@@ -35,43 +36,52 @@ export default function ChannelSettingsModal() {
 
     const theme = useTheme();
 
+    const [openOnlineList, setOpenOnlineList] = useState(false);
+    const handleOpenOnlineList = () => setOpenOnlineList(true);
+    const handleCloseOnlineList = () => setOpenOnlineList(false);
+
     return (
         <div>
-                <IconButton
-                    aria-label="more"
-                    id="long-button"
-                    aria-controls={openDropdown ? 'long-menu' : undefined}
-                    aria-expanded={openDropdown ? 'true' : undefined}
-                    aria-haspopup="true"
-                    onClick={handleClick}
-                    style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000' }}
-                >
-                    <MoreVertIcon/>
-                </IconButton>
-                <Menu
-                    id="long-menu"
-                    MenuListProps={{
-                        'aria-labelledby': 'long-button',
-                    }}
-                    anchorEl={anchorEl}
-                    open={openDropdown}
-                    onClose={handleCloseDropdown}
-                    slotProps={{
-                        paper: {
-                            style: {
-                                width: '20ch',
-                            },
+            <IconButton
+                aria-label="more"
+                id="long-button"
+                aria-controls={openDropdown ? 'long-menu' : undefined}
+                aria-expanded={openDropdown ? 'true' : undefined}
+                aria-haspopup="true"
+                onClick={handleClick}
+                style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000' }}
+            >
+                <MoreVertIcon/>
+            </IconButton>
+            <Menu
+                id="long-menu"
+                MenuListProps={{
+                    'aria-labelledby': 'long-button',
+                }}
+                anchorEl={anchorEl}
+                open={openDropdown}
+                onClose={handleCloseDropdown}
+                slotProps={{
+                    paper: {
+                        style: {
+                            width: '20ch',
                         },
-                    }}
-                >
-                    <MenuItem onClick={() => { handleOpen(); handleCloseDropdown(); }}>
-                        <Typography>
-                            Settings
-                        </Typography>
-                    </MenuItem>
-                </Menu>
+                    },
+                }}
+            >
+                <MenuItem onClick={() => { handleOpen(); handleCloseDropdown(); }}>
+                    <Typography>
+                        Settings
+                    </Typography>
+                </MenuItem>
+                <MenuItem onClick={() => { handleOpenOnlineList(); handleCloseDropdown(); }}>
+                    <Typography>
+                        Online users
+                    </Typography>
+                </MenuItem>
+            </Menu>
 
-                {/* Modal */}
+            {/* Settings Modal */}
             <Modal
                 open={open}
                 onClose={handleClose}
@@ -98,6 +108,34 @@ export default function ChannelSettingsModal() {
                                     Ici les options
                                 </Typography>
                             </Box>
+                        </Box>
+                    </Container>
+                </Box>
+            </Modal>
+
+            {/* Online Users Modal */}
+            <Modal
+                open={openOnlineList}
+                onClose={handleCloseOnlineList}
+                aria-labelledby="online-list-modal-title"
+                aria-describedby="online-list-modal-description"
+            >
+                <Box sx={style}>
+                    <Container component="main" maxWidth="xs">
+                        <CssBaseline />
+                        <Box
+                            sx={{
+                                marginTop: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                height: "100%",
+                            }}
+                        >
+                            <Typography component="h1" variant="h5" id="online-list-modal-title" style={{marginBottom: "5%"}}>
+                                🟢 Online Users
+                            </Typography>
+                            <OnlineList isMobile={true} handleDrawerToggle={handleCloseOnlineList} />
                         </Box>
                     </Container>
                 </Box>

@@ -21,9 +21,12 @@ const OnlineList: React.FC<OnlineListProps> = ({ isMobile, handleDrawerToggle })
 
     return (
         <>
-            <Typography variant="body2" color="text.secondary">
-                Online
-            </Typography>
+            {!isMobile && (
+                <Typography variant="body2" color="text.secondary">
+                    Online
+                </Typography>
+            )}
+
             <Stack spacing={2}>
                 {dummyOnlines.map((online) => (
                     <Box
