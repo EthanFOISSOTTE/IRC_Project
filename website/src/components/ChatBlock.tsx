@@ -47,8 +47,10 @@ const ChatBlock = () => {
         >
             <Box sx={{ p: 2 }}>
                 <SidePanel>
-                    <AccountModal />
-                    <RegistrationModal />
+                    <AccountModal/>
+                    <RegistrationModal/>
+                    <hr style={{width: "100%"}}/>
+                    <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle}/>
                 </SidePanel>
             </Box>
         </Drawer>
@@ -149,6 +151,7 @@ const ChatBlock = () => {
         <ThemeProvider theme={customTheme}>
             <CssBaseline />
             <Container sx={{ height: "100vh", width: "100vw", p: { xs: 0, md: 2 } }}>
+
                 {/* Header */}
                 <AppBar position="static" color="inherit" elevation={1}>
                     <Toolbar>
