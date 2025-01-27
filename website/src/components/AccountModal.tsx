@@ -48,7 +48,7 @@ export default function AccountModal() {
         <div>
             <Button
                 onClick={handleOpen}
-                style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000' }}
+                style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
             >
                 Connexion
             </Button>

@@ -12,6 +12,7 @@ import {
     Drawer,
     AppBar,
     Toolbar,
+    IconButton,
 } from "@mui/material";
 import PersonIcon from '@mui/icons-material/Person';
 import ChatIcon from '@mui/icons-material/Chat';
@@ -28,7 +29,6 @@ import { io, Socket } from 'socket.io-client';
 import RegistrationModal from "./RegistrationModal.tsx";
 import { format } from 'date-fns';
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import IconButton from '@mui/material/IconButton';
 import ChannelSettingsModal from "./ChannelSettingsModal.tsx";
 
 const ChatUI = () => {
@@ -38,7 +38,8 @@ const ChatUI = () => {
     >([]);
     const [inputValue, setInputValue] = useState("");
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [mode, setMode] = useState<"light" | "dark">("light");
+    const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+    const [mode, setMode] = useState<"light" | "dark">(prefersDarkMode ? "dark" : "light");
 
     const [username, setUsername] = useState<string>('');
     const [isUsernameSet, setIsUsernameSet] = useState<boolean>(false);
@@ -65,7 +66,6 @@ const ChatUI = () => {
         }
     };
 
-    // Fonction pour formatter la date
     const formatDate = (dateString: string) => {
         if (!dateString) {
             return "";
@@ -136,6 +136,10 @@ const ChatUI = () => {
     ];
 
     useEffect(() => {
+        setMode(prefersDarkMode ? "dark" : "light");
+    }, [prefersDarkMode]);
+
+    useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
@@ -187,6 +191,24 @@ const ChatUI = () => {
             console.log("Message envoyé:", inputValue);
         }
     };
+
+    const renderMobileMenu = () => (
+        <Drawer
+            variant="temporary"
+            anchor="left"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{ keepMounted: true }}
+            sx={{ "& .MuiDrawer-paper": { width: "80%" } }}
+        >
+            <Box sx={{ p: 2 }}>
+                <SidePanel>
+                    <AccountModal />
+                    <RegistrationModal />
+                </SidePanel>
+            </Box>
+        </Drawer>
+    );
 
     const chatsList = (
         <>
@@ -285,9 +307,12 @@ const ChatUI = () => {
                             IRC Project
                         </Typography>
 
-                        <AccountModal />
-
-                        <RegistrationModal />
+                        {!isMobile && (
+                            <>
+                                <AccountModal />
+                                <RegistrationModal />
+                            </>
+                        )}
 
                         <IconButton onClick={toggleTheme} color="inherit">
                             {theme.palette.mode === "dark" ? <IoSunny /> : <IoMoon />}
@@ -299,20 +324,7 @@ const ChatUI = () => {
                 {/* Chat Layout */}
                 <StyledChatContainer>
                     {/* Side Panels */}
-                    {isMobile ? (
-                        <Drawer
-                            variant="temporary"
-                            anchor="left"
-                            open={mobileOpen}
-                            onClose={handleDrawerToggle}
-                            ModalProps={{ keepMounted: true }}
-                            sx={{ "& .MuiDrawer-paper": { width: "80%" } }}
-                        >
-                            <Box sx={{ p: 2 }}>
-                                <SidePanel>{chatsList}</SidePanel>
-                            </Box>
-                        </Drawer>
-                    ) : (
+                    {isMobile ? renderMobileMenu() : (
                         <SidePanel elevation={2}>{chatsList}</SidePanel>
                     )}
 
@@ -417,22 +429,10 @@ const ChatUI = () => {
                     </ChatArea>
 
                     {/* Online Users */}
-                    {isMobile ? (
-                        <Drawer
-                            variant="temporary"
-                            anchor="left"
-                            open={mobileOpen}
-                            onClose={handleDrawerToggle}
-                            ModalProps={{ keepMounted: true }}
-                            sx={{ "& .MuiDrawer-paper": { width: "80%" } }}
-                        >
-                            <Box sx={{ p: 2 }}>
-                                <SidePanel>{onlineList}</SidePanel>
-                            </Box>
-                        </Drawer>
-                    ) : (
+                    {isMobile ? renderMobileMenu() : (
                         <SidePanel elevation={2}>{onlineList}</SidePanel>
                     )}
+
                 </StyledChatContainer>
 
             </Container>
