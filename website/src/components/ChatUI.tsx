@@ -4,7 +4,6 @@ import {
     Typography,
     Stack,
     Container,
-    IconButton,
     useTheme,
     ThemeProvider,
     createTheme,
@@ -16,7 +15,7 @@ import {
 } from "@mui/material";
 import PersonIcon from '@mui/icons-material/Person';
 import ChatIcon from '@mui/icons-material/Chat';
-import { IoSend, IoSettingsSharp, IoMenu, IoMoon, IoSunny } from "react-icons/io5";
+import { IoSend, IoMenu, IoMoon, IoSunny } from "react-icons/io5";
 import StyledChatContainer from "./StyledChatContainer";
 import SidePanel from "./SidePanel";
 import ChatArea from "./ChatArea";
@@ -29,6 +28,8 @@ import { io, Socket } from 'socket.io-client';
 import RegistrationModal from "./RegistrationModal.tsx";
 import { format } from 'date-fns';
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import IconButton from '@mui/material/IconButton';
+import ChannelSettingsModal from "./ChannelSettingsModal.tsx";
 
 const ChatUI = () => {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -318,13 +319,13 @@ const ChatUI = () => {
                     {/* Chat Area */}
                     <ChatArea elevation={2}>
                         {/* Chat Header */}
-                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Box sx={{display: "flex", justifyContent: "space-between", mb: 2}}>
+                            <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
                                 <Typography variant="h6">Chat Room</Typography>
                             </Box>
-                            <IconButton aria-label="settings">
-                                <IoSettingsSharp />
-                            </IconButton>
+
+                            <ChannelSettingsModal />
+
                         </Box>
 
                         {/* Messages */}
@@ -342,11 +343,12 @@ const ChatUI = () => {
                             {messages.map((message, index) => (
                                 <MessageContainer key={index}>
                                     <MessageBubble>
-                                        <Typography variant="body1" fontWeight="bold" fontSize={"small"} marginBottom={"3px"} display={"flex"} alignContent={"center"}>
+                                        <Typography variant="body1" fontWeight="bold" fontSize={"small"}
+                                                    marginBottom={"3px"} display={"flex"} alignContent={"center"}>
                                             {message.user === "" ? (
                                                 <span role="img" aria-label="robot">🤖</span>
                                             ) : (
-                                                <PersonIcon style={{ fontSize: 20, paddingRight: '3px' }} />
+                                                <PersonIcon style={{fontSize: 20, paddingRight: '3px' }} />
                                             )}
                                             {message.user}
                                         </Typography>
