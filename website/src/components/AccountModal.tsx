@@ -64,6 +64,14 @@ export default function AccountModal({ isConnected, setIsConnected, setIsUsernam
         setIsConnected(false);
         window.location.reload(); // Recharger la page
     };
+    const handleConnect = () => {
+        const trimmedUsername = username.trim();
+        setIsConnected(true);
+        setIsUsernameSet(true);
+        console.log("Connecté");
+        console.log("Nom d'utilisateur défini:", trimmedUsername);
+
+    };
 
     const theme = useTheme();
 
