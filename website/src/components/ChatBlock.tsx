@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 import OnlineList from "./OnlineList";
 import ChannelsList from "./ChannelsList.tsx";
 import ChatAreaChannel from "./ChatAreaChannel.tsx";
+import ChannelSettingsModal from "./ChannelSettingsModal.tsx";
 
 const ChatBlock = () => {
     const theme = useTheme();
@@ -55,8 +56,9 @@ const ChatBlock = () => {
                         socket={socket}
                     />
                     {!isConnected && <RegistrationModal />}
-                    <hr style={{width: "100%"}}/>
-                    <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle}/>
+                    <hr style={{ width: "100%" }} />
+                    <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} />
+                    <OnlineList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} onlineUsers={onlineUsers} />
                 </SidePanel>
             </Box>
         </Drawer>
@@ -66,10 +68,12 @@ const ChatBlock = () => {
     const [username, setUsername] = useState<string>('');
     const [isUsernameSet, setIsUsernameSet] = useState<boolean>(false);
     const [isConnected, setIsConnected] = useState<boolean>(false);
+    const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
     const [messages, setMessages] = useState<
         { user: string; text: string; sent: boolean; timestamp: string }[]
     >([]);
     const [inputValue, setInputValue] = useState("");
+
     const handleSetUsername = () => {
         const trimmedUsername = username.trim();
         if (trimmedUsername && socket) {
@@ -147,6 +151,10 @@ const ChatBlock = () => {
             addMessage("", `🔴 ${msg}`, false);
         });
 
+        newSocket.on("connected-users", (users: string[]) => {
+            setOnlineUsers(users);
+        });
+
         return () => {
             newSocket.disconnect();
         };
@@ -205,13 +213,15 @@ const ChatBlock = () => {
                         setUsername={setUsername}
                         handleSetUsername={handleSetUsername}
                         formatDate={formatDate}
+                        onlineUsers={onlineUsers}
                     />
                     {isMobile ? renderMobileMenu() : (
                         <SidePanel elevation={2}>
-                            <OnlineList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} />
+                            <OnlineList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} onlineUsers={onlineUsers} />
                         </SidePanel>
                     )}
                 </StyledChatContainer>
+                <ChannelSettingsModal onlineUsers={onlineUsers} />
             </Container>
         </ThemeProvider>
     );

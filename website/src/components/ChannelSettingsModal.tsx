@@ -1,6 +1,6 @@
 import Modal from '@mui/material/Modal';
-import {Box, Typography, Container, CssBaseline, useTheme} from "@mui/material";
-import React, {useState} from "react";
+import { Box, Typography, Container, CssBaseline, useTheme } from "@mui/material";
+import React, { useState } from "react";
 import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Menu from "@mui/material/Menu";
@@ -19,11 +19,15 @@ const style = {
     p: 4,
 };
 
-export default function ChannelSettingsModal() {
+interface ChannelSettingsModalProps {
+    onlineUsers: string[];
+}
+
+export default function ChannelSettingsModal({ onlineUsers }: ChannelSettingsModalProps) {
     const [open, setOpen] = useState(false);
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
     const openDropdown = Boolean(anchorEl);
 
@@ -51,7 +55,7 @@ export default function ChannelSettingsModal() {
                 onClick={handleClick}
                 style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000' }}
             >
-                <MoreVertIcon/>
+                <MoreVertIcon />
             </IconButton>
             <Menu
                 id="long-menu"
@@ -90,7 +94,7 @@ export default function ChannelSettingsModal() {
             >
                 <Box sx={style}>
                     <Container component="main" maxWidth="xs">
-                        <CssBaseline/>
+                        <CssBaseline />
                         <Box
                             sx={{
                                 marginTop: 1,
@@ -132,10 +136,10 @@ export default function ChannelSettingsModal() {
                                 height: "100%",
                             }}
                         >
-                            <Typography component="h1" variant="h5" id="online-list-modal-title" style={{marginBottom: "5%"}}>
+                            <Typography component="h1" variant="h5" id="online-list-modal-title" style={{ marginBottom: "5%" }}>
                                 🟢 Online Users
                             </Typography>
-                            <OnlineList isMobile={true} handleDrawerToggle={handleCloseOnlineList} />
+                            <OnlineList isMobile={true} handleDrawerToggle={handleCloseOnlineList} onlineUsers={onlineUsers} />
                         </Box>
                     </Container>
                 </Box>

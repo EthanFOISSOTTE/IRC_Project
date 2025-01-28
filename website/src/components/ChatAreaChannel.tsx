@@ -14,6 +14,7 @@ interface ChatAreaChannelProps {
     handleSendMessage: () => void;
     isUsernameSet: boolean;
     isConnected: boolean;
+    onlineUsers: string[];
     username: string;
     setUsername: (value: string) => void;
     handleSetUsername: () => void;
@@ -27,6 +28,7 @@ const ChatAreaChannel: React.FC<ChatAreaChannelProps> = ({
                                                              handleSendMessage,
                                                              isUsernameSet,
                                                              isConnected,
+                                                             onlineUsers,
                                                              username,
                                                              setUsername,
                                                              handleSetUsername,
@@ -51,7 +53,7 @@ const ChatAreaChannel: React.FC<ChatAreaChannelProps> = ({
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Typography variant="h6">Chat Room</Typography>
                 </Box>
-                <ChannelSettingsModal />
+                <ChannelSettingsModal onlineUsers={onlineUsers} />
             </Box>
 
             {/* Messages */}

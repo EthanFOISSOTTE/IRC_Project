@@ -1,36 +1,20 @@
-import { useEffect, useState } from "react";
 import { Box, Stack, Typography, useTheme } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
-import { io } from "socket.io-client";
-
-const socket = io("http://localhost:3000");
 
 interface OnlineListProps {
     isMobile: boolean;
     handleDrawerToggle: () => void;
+    onlineUsers: string[];
 }
 
-const OnlineList: React.FC<OnlineListProps> = ({ isMobile, handleDrawerToggle }) => {
+const OnlineList: React.FC<OnlineListProps> = ({ isMobile, handleDrawerToggle, onlineUsers }) => {
     const theme = useTheme();
-    const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-
-    useEffect(() => {
-        socket.on("connected-users", (users: string[]) => {
-            setOnlineUsers(users);
-        });
-
-        return () => {
-            socket.off("connected-users");
-        };
-    }, []);
 
     return (
         <>
-            {!isMobile && (
-                <Typography variant="body2" color="text.secondary">
-                    Online
-                </Typography>
-            )}
+            <Typography variant="body2" color="text.secondary">
+                Online
+            </Typography>
 
             <Stack spacing={2}>
                 {onlineUsers.map((name, index) => (
