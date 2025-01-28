@@ -35,10 +35,10 @@ const ChannelsList: React.FC<ChannelsListProps> = ({ isMobile, handleDrawerToggl
 
     const handleAddChannelClick = () => {
         if (isConnected) {
-            // Logic to add a channel
+            // Création d'un channel
             console.log("Add a channel");
         } else {
-            // Show AccountModal to connect
+            // Modal de connexion
             openAccountModal();
         }
     };
