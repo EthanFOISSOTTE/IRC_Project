@@ -238,4 +238,4 @@ server.listen(PORT, () => {
     console.log(`Serveur lancé sur http://localhost:${PORT}`);
 });
 
-module.exports = { app, server, io };
+module.exports = { app, server, io, User, Message };

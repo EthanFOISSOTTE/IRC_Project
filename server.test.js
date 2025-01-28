@@ -1,10 +1,12 @@
+require('dotenv').config();
 const { app, server, io } = require('./server');
 const request = require('supertest');
-const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
 const socketClient = require('socket.io-client');
 const { User, Message } = require('./server');
+const http = require('http');
+const path = require('path');
 
 // Simuler bcrypt pour éviter des appels réels
 jest.mock('bcrypt', () => ({
