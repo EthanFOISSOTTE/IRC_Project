@@ -49,6 +49,26 @@ const userSchema = new mongoose.Schema({
 }, { collection: 'user' });
 const User = mongoose.model('User', userSchema);
 
+// Définir le modèle de channel
+const chanelSchema = new mongoose.Schema(
+    {
+        id: { type: String, default: uuidv4 },
+        chanelName: { type: String, required: true },
+    },
+    { collection: 'messages' }
+);
+const Channel = mongoose.model('Chanel', chanelSchema);
+
+// Définir le modèle de user par channel
+const userByChanelSchema = new mongoose.Schema(
+    {
+        idChannel: { type: String, default: uuidv4 },
+        idUser: { type: String, default: uuidv4 },
+    },
+    { collection: 'messages' }
+);
+const userByChanel = mongoose.model('user_by_channel', userByChanelSchema);
+
 app.use(express.json());
 
 // Route pour l'inscription des utilisateurs
@@ -82,6 +102,19 @@ app.post('/login', async (req, res) => {
         // io.emit('user-connected', `${user.pseudo} vient de rejoindre le chat`);
     } catch (err) {
         res.status(500).send('Erreur lors de la connexion');
+    }
+});
+
+// Route pour créer un nouveau channel
+app.post('/create', async (req, res) => {
+    const { chanelName } = req.body;
+    try {
+        const newChannel = new Channel({ id: uuidv4(), chanelName });
+        await newChannel.save();
+        res.status(201).send('Channel créé avec succès');
+        io.emit('channel-created', `${chanelName} a été créé`);
+    } catch (err) {
+        res.status(400).send('Erreur lors de la création du channel');
     }
 });
 
