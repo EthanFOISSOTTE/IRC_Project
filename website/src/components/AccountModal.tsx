@@ -1,9 +1,9 @@
 import * as React from 'react';
 import Modal from '@mui/material/Modal';
-import { Box, Button, TextField, Typography, Container, CssBaseline, useTheme } from "@mui/material";
+import { Box, Button, TextField, Typography, Container, CssBaseline } from "@mui/material";
 import { useState } from "react";
 import axios from 'axios';
-import {Socket} from "socket.io-client";
+import { Socket } from "socket.io-client";
 
 interface AccountModalProps {
     isConnected: boolean;
@@ -11,6 +11,8 @@ interface AccountModalProps {
     setIsUsernameSet: (isUsernameSet: boolean) => void;
     setUsername: (username: string) => void;
     socket: Socket | null;
+    open: boolean;
+    onClose: () => void;
 }
 
 const style = {
@@ -25,11 +27,7 @@ const style = {
     p: 4,
 };
 
-export default function AccountModal({ isConnected, setIsConnected, setIsUsernameSet, setUsername, socket }: AccountModalProps) {
-    const [open, setOpen] = useState(false);
-    const handleOpen = () => setOpen(true);
-    const handleClose = () => setOpen(false);
-
+export default function AccountModal({ setIsConnected, setIsUsernameSet, setUsername, socket, open, onClose }: AccountModalProps) {
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -53,49 +51,18 @@ export default function AccountModal({ isConnected, setIsConnected, setIsUsernam
             if (socket) {
                 socket.emit('set-username', response.data.pseudo);
             }
-            handleClose();
+            onClose();
         } catch (err) {
             console.error("Erreur lors de la connexion", err);
             setErrorMessage("Identifiants incorrects. Veuillez réessayer.");
         }
     };
 
-    const handleLogout = () => {
-        setIsConnected(false);
-        window.location.reload(); // Recharger la page
-    };
-    const handleConnect = () => {
-        const trimmedUsername = username.trim();
-        setIsConnected(true);
-        setIsUsernameSet(true);
-        console.log("Connecté");
-        console.log("Nom d'utilisateur défini:", trimmedUsername);
-
-    };
-
-    const theme = useTheme();
-
     return (
         <div>
-            {isConnected ? (
-                <Button
-                    onClick={handleLogout}
-                    style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
-                >
-                    Déconnexion
-                </Button>
-            ) : (
-                <Button
-                    onClick={handleOpen}
-                    style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
-                >
-                    Connexion
-                </Button>
-            )}
-
             <Modal
                 open={open}
-                onClose={handleClose}
+                onClose={onClose}
                 aria-labelledby="modal-modal-title"
                 aria-describedby="modal-modal-description"
             >

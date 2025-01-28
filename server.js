@@ -54,6 +54,7 @@ const chanelSchema = new mongoose.Schema(
     {
         id: { type: String, default: uuidv4 },
         chanelName: { type: String, required: true },
+        chanelDesc: { type: String, required: true },
     },
     { collection: 'messages' }
 );
@@ -107,9 +108,9 @@ app.post('/login', async (req, res) => {
 
 // Route pour créer un nouveau channel
 app.post('/create', async (req, res) => {
-    const { chanelName } = req.body;
+    const { chanelName, chanelDesc } = req.body;
     try {
-        const newChannel = new Channel({ id: uuidv4(), chanelName });
+        const newChannel = new Channel({ id: uuidv4(), chanelName, chanelDesc });
         await newChannel.save();
         res.status(201).send('Channel créé avec succès');
         io.emit('channel-created', `${chanelName} a été créé`);

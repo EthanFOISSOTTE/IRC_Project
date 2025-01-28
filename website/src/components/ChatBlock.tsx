@@ -11,19 +11,18 @@ import {
     Drawer,
     AppBar,
     Toolbar,
-    IconButton,
+    IconButton, Button,
 } from "@mui/material";
 import { IoMenu, IoMoon, IoSunny } from "react-icons/io5";
 import StyledChatContainer from "./StyledChatContainer";
 import SidePanel from "./SidePanel";
-import AccountModal from "./AccountModal";
 import { io, Socket } from 'socket.io-client';
 import RegistrationModal from "./RegistrationModal.tsx";
 import { format } from 'date-fns';
 import OnlineList from "./OnlineList";
 import ChannelsList from "./ChannelsList.tsx";
 import ChatAreaChannel from "./ChatAreaChannel.tsx";
-import ChannelSettingsModal from "./ChannelSettingsModal.tsx";
+import AccountModal from "./AccountModal.tsx";
 
 const ChatBlock = () => {
     const theme = useTheme();
@@ -48,16 +47,24 @@ const ChatBlock = () => {
         >
             <Box sx={{ p: 2 }}>
                 <SidePanel>
-                    <AccountModal
-                        isConnected={isConnected}
-                        setIsConnected={setIsConnected}
-                        setIsUsernameSet={setIsUsernameSet}
-                        setUsername={setUsername}
-                        socket={socket}
-                    />
+                    {isConnected ? (
+                        <Button
+                            onClick={handleLogout}
+                            style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
+                        >
+                            Déconnexion
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={onClose}
+                            style={{ cursor: 'pointer', color: theme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
+                        >
+                            Connexion
+                        </Button>
+                    )}
                     {!isConnected && <RegistrationModal />}
                     <hr style={{ width: "100%" }} />
-                    <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} />
+                    <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} isConnected={isConnected} setUsername={setUsername} setIsUsernameSet={setIsUsernameSet} setIsConnected={setIsConnected} socket={socket} openAccountModal={() => setIsAccountModalOpen(true)} />
                     <OnlineList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} onlineUsers={onlineUsers} />
                 </SidePanel>
             </Box>
@@ -73,6 +80,7 @@ const ChatBlock = () => {
         { user: string; text: string; sent: boolean; timestamp: string }[]
     >([]);
     const [inputValue, setInputValue] = useState("");
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const handleSetUsername = () => {
         const trimmedUsername = username.trim();
@@ -96,7 +104,19 @@ const ChatBlock = () => {
         }
     };
 
-    {/* Thème */}
+    const handleLogout = () => {
+        setIsConnected(false);
+        setIsUsernameSet(false);
+        setUsername('');
+        if (socket) {
+            socket.disconnect();
+        }
+    };
+
+    const onClose = () => {
+        setIsAccountModalOpen(false);
+    };
+
     const toggleTheme = () => {
         setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
     };
@@ -106,7 +126,6 @@ const ChatBlock = () => {
         },
     });
 
-    {/* Formatage Date */}
     const formatDate = (dateString: string) => {
         if (!dateString) {
             return "";
@@ -181,12 +200,30 @@ const ChatBlock = () => {
                         </Typography>
                         {!isMobile && (
                             <>
+                                {isConnected ? (
+                                    <Button
+                                        onClick={handleLogout}
+                                        style={{ cursor: 'pointer', color: customTheme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
+                                    >
+                                        Déconnexion
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={() => setIsAccountModalOpen(true)}
+                                        style={{ cursor: 'pointer', color: customTheme.palette.mode === 'dark' ? '#fff' : '#000', margin: '0px 10px 0px 10px'}}
+                                    >
+                                        Connexion
+                                    </Button>
+
+                                )}
                                 <AccountModal
                                     isConnected={isConnected}
                                     setIsConnected={setIsConnected}
                                     setIsUsernameSet={setIsUsernameSet}
                                     setUsername={setUsername}
                                     socket={socket}
+                                    open={isAccountModalOpen}
+                                    onClose={onClose}
                                 />
                                 {!isConnected && <RegistrationModal />}
                             </>
@@ -199,7 +236,7 @@ const ChatBlock = () => {
                 <StyledChatContainer>
                     {isMobile ? renderMobileMenu() : (
                         <SidePanel elevation={2}>
-                            <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} />
+                            <ChannelsList isMobile={isMobile} handleDrawerToggle={handleDrawerToggle} isConnected={isConnected} setUsername={setUsername} setIsUsernameSet={setIsUsernameSet} setIsConnected={setIsConnected} socket={socket} openAccountModal={() => setIsAccountModalOpen(true)} />
                         </SidePanel>
                     )}
                     <ChatAreaChannel
@@ -221,7 +258,6 @@ const ChatBlock = () => {
                         </SidePanel>
                     )}
                 </StyledChatContainer>
-                <ChannelSettingsModal onlineUsers={onlineUsers} />
             </Container>
         </ThemeProvider>
     );
