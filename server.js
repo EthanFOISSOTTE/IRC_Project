@@ -38,7 +38,9 @@ const messageSchema = new mongoose.Schema(
     },
     { collection: 'messages' }
 );
-const Message = mongoose.model('Message', messageSchema);
+
+const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
+
 
 // Définir le modèle d'utilisateur
 const userSchema = new mongoose.Schema({
@@ -238,4 +240,5 @@ server.listen(PORT, () => {
     console.log(`Serveur lancé sur http://localhost:${PORT}`);
 });
 
-module.exports = { app, server, io, User, Message };
+module.exports = { server, io };
+module.exports = { Message, updateMessagesWithNewUsername };
